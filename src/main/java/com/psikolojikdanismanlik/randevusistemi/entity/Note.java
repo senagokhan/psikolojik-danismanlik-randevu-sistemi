@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 import java.time.LocalDateTime;
 
 @NoArgsConstructor
@@ -21,6 +20,10 @@ public class Note {
 
     @Column(columnDefinition = "TEXT")
     private String content;
+
+    @OneToOne
+    @JoinColumn(name = "appointment_id", referencedColumnName = "id")
+    private Appointment appointment;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

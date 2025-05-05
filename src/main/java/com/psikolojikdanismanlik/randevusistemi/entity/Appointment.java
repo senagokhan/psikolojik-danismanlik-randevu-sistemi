@@ -9,7 +9,6 @@ import lombok.Setter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
@@ -29,8 +28,7 @@ public class Appointment {
     @JoinColumn(name = "client_id")
     private Client client;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "note_id", referencedColumnName = "id")
+    @OneToOne(mappedBy = "appointment", cascade = CascadeType.ALL)
     private Note note;
 
     @OneToOne(cascade = CascadeType.ALL)

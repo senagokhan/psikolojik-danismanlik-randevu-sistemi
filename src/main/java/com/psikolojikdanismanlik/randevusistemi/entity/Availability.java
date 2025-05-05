@@ -36,9 +36,4 @@ public class Availability {
     protected void onCreate() {
         this.availableDate = LocalDate.now();
     }
-
-
-
-
-
 }
