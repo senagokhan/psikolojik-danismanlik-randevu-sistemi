@@ -1,4 +1,7 @@
 package com.psikolojikdanismanlik.randevusistemi.repository;
 
-public interface UserRepository {
+import com.psikolojikdanismanlik.randevusistemi.entity.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface UserRepository extends JpaRepository<User, Long> {
 }

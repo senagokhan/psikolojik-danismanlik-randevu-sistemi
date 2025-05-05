@@ -1,4 +1,7 @@
 package com.psikolojikdanismanlik.randevusistemi.repository;
 
-public interface AvailabilityRepository {
+import com.psikolojikdanismanlik.randevusistemi.entity.Availability;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface AvailabilityRepository extends JpaRepository<Availability, Long> {
 }

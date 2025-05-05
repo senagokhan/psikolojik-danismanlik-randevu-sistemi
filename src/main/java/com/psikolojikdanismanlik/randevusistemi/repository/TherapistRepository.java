@@ -1,4 +1,7 @@
 package com.psikolojikdanismanlik.randevusistemi.repository;
 
-public interface TherapistRepository {
+import com.psikolojikdanismanlik.randevusistemi.entity.Therapist;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface TherapistRepository extends JpaRepository<Therapist, Long> {
 }
