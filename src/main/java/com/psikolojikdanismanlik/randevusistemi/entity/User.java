@@ -1,6 +1,7 @@
 package com.psikolojikdanismanlik.randevusistemi.entity;
 
 import com.psikolojikdanismanlik.randevusistemi.enums.Gender;
+import com.psikolojikdanismanlik.randevusistemi.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -35,14 +36,14 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    @OneToOne(mappedBy = "user")
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Client client;
 
-    @OneToOne(mappedBy = "therapist")
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Therapist therapist;
 
-    @ManyToOne
-    @JoinColumn(name = "role_id")
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Role role;
 
     @Column(name = "birth_date", nullable = false, updatable = false)
@@ -56,4 +57,11 @@ public class User {
         this.createdAt = LocalDateTime.now();
     }
 
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+}
 }

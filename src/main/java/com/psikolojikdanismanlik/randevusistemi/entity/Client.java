@@ -30,9 +30,4 @@ public class Client {
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
     private List<Appointment> appointments = new ArrayList<>();
 
-    @ManyToOne
-    @JoinColumn(name = "therapist_id")
-    private Therapist therapist;
-
-
 }

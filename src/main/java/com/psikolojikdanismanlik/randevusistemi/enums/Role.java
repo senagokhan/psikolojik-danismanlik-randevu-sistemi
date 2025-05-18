@@ -1,6 +1,7 @@
 package com.psikolojikdanismanlik.randevusistemi.enums;
 
-public enum UserType {
-    Client,
-    Therapist
+public enum Role {
+    CLIENT,
+    THERAPIST,
+    ADMIN
 }

@@ -31,13 +31,12 @@ public class Appointment {
     @OneToOne(mappedBy = "appointment", cascade = CascadeType.ALL)
     private Note note;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "feedback_id", referencedColumnName = "id")
-    private Feedback feedback;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private Status status;
+
+    @OneToOne(mappedBy = "appointment", cascade = CascadeType.ALL)
+    private Feedback feedback;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

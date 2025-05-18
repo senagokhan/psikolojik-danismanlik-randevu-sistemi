@@ -21,7 +21,7 @@ public class Feedback {
     @Column(columnDefinition = "TEXT")
     private String comment;
 
-    private Long rating;
+    private Integer rating;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -30,6 +30,11 @@ public class Feedback {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+
+    @OneToOne
+    @JoinColumn(name = "appointment_id", referencedColumnName = "id")
+    private Appointment appointment;
+
 
     @ManyToOne
     @JoinColumn(name = "client_id")

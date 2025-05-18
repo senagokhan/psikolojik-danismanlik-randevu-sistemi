@@ -21,6 +21,9 @@ public class Note {
     @Column(columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "is_private", nullable = false)
+    private boolean isPrivate = true;
+
     @OneToOne
     @JoinColumn(name = "appointment_id", referencedColumnName = "id")
     private Appointment appointment;

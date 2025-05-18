@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @NoArgsConstructor
@@ -13,7 +12,10 @@ import java.time.LocalDateTime;
 @Setter
 @Getter
 @Entity
-@Table(name = "availabilities")
+@Table(
+        name = "availabilities",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"therapist_id", "start_time", "end_time"})
+)
 public class Availability {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,11 +31,4 @@ public class Availability {
     @Column(name = "end_time", nullable = false)
     private LocalDateTime endTime;
 
-    @Column(name = "available_date", nullable = false, updatable = false)
-    private LocalDate availableDate;
-
-    @PrePersist
-    protected void onCreate() {
-        this.availableDate = LocalDate.now();
-    }
 }
