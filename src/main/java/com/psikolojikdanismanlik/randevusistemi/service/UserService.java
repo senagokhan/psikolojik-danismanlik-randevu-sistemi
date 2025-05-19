@@ -2,6 +2,7 @@ package com.psikolojikdanismanlik.randevusistemi.service;
 
 import com.psikolojikdanismanlik.randevusistemi.dto.request.UserLoginRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.UserRegisterRequest;
+import com.psikolojikdanismanlik.randevusistemi.dto.request.UserUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.UserResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.entity.User;
 import com.psikolojikdanismanlik.randevusistemi.repository.UserRepository;
@@ -57,4 +58,34 @@ public class UserService {
             throw new RuntimeException("Giriş yapılamadı: " + e.getMessage());
         }
     }
+
+    public UserResponseDto getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
+
+        return modelMapper.map(user, UserResponseDto.class);
+    }
+
+
+    public UserResponseDto updateCurrentUser(UserUpdateRequest request, String currentEmail) {
+        try {
+            User user = userRepository.findByEmail(currentEmail)
+                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
+
+            user.setFullName(request.getFullName());
+            user.setPhoneNumber(request.getPhoneNumber());
+
+            if (request.getPassword() != null && !request.getPassword().isBlank()) {
+                user.setPassword(passwordEncoder.encode(request.getPassword()));
+            }
+
+            userRepository.save(user);
+
+            return modelMapper.map(user, UserResponseDto.class);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Kullanıcı güncellenemedi: " + e.getMessage());
+        }
+    }
+
 }
