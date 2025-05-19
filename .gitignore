@@ -33,6 +33,6 @@ build/
 .vscode/
 
 src/main/resources/application.properties
-src/main/java/com/psikolojikdanismanlik/randevusistemi/config/SecurityConfig.java
+src/main/java/com/psikolojikdanismanlik/randevusistemi/config/AppConfig.java
 
 .jar

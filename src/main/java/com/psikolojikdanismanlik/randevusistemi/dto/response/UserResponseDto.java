@@ -1,5 +1,6 @@
 package com.psikolojikdanismanlik.randevusistemi.dto.response;
 
+import com.psikolojikdanismanlik.randevusistemi.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,8 +15,5 @@ public class UserResponseDto {
     private Long id;
     private String fullName;
     private String email;
-    private String gender;
-    private LocalDate birthDate;
-    private LocalDate createdAt;
-    private String role;
+    private Role role;
 }
