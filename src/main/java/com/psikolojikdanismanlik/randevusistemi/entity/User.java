@@ -1,5 +1,6 @@
 package com.psikolojikdanismanlik.randevusistemi.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.psikolojikdanismanlik.randevusistemi.enums.Gender;
 import com.psikolojikdanismanlik.randevusistemi.enums.Role;
 import jakarta.persistence.*;
@@ -40,6 +41,7 @@ public class User {
     private Client client;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonIgnore
     private Therapist therapist;
 
     @Enumerated(EnumType.STRING)
