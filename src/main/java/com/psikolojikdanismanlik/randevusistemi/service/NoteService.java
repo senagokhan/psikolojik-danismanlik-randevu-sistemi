@@ -8,6 +8,7 @@ import com.psikolojikdanismanlik.randevusistemi.repository.AppointmentRepository
 import com.psikolojikdanismanlik.randevusistemi.repository.NoteRepository;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 
 @Service
@@ -21,9 +22,14 @@ public class NoteService {
         this.noteRepository = noteRepository;
     }
 
-    public NoteResponseDto addNote(Long appointmentId, NoteRequestDto request) {
+    public NoteResponseDto addNote(Long appointmentId, NoteRequestDto request, String therapistEmail) throws AccessDeniedException {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new RuntimeException("Randevu bulunamadı"));
+
+        String actualTherapistEmail = appointment.getTherapist().getUser().getEmail();
+        if (!actualTherapistEmail.equals(therapistEmail)) {
+            throw new AccessDeniedException("Bu randevuya not eklemeye yetkiniz yok.");
+        }
 
         Note note = new Note();
         note.setAppointment(appointment);
@@ -41,4 +47,27 @@ public class NoteService {
 
         return response;
     }
+
+    public NoteResponseDto getNoteForTherapist(Long appointmentId, String therapistEmail) throws AccessDeniedException {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Randevu bulunamadı"));
+
+        String emailFromAppointment = appointment.getTherapist().getUser().getEmail();
+
+        if (!emailFromAppointment.equals(therapistEmail)) {
+            throw new AccessDeniedException("Bu notu görüntülemeye yetkiniz yok.");
+        }
+
+        Note note = noteRepository.findByAppointmentId(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Not bulunamadı"));
+
+        NoteResponseDto dto = new NoteResponseDto();
+        dto.setId(note.getId());
+        dto.setContent(note.getContent());
+        dto.setPrivate(note.isPrivate());
+        dto.setCreatedAt(note.getCreatedAt());
+
+        return dto;
+    }
+
 }
