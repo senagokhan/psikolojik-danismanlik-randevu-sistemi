@@ -13,6 +13,7 @@ import com.psikolojikdanismanlik.randevusistemi.repository.TherapistRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -73,6 +74,41 @@ public class AppointmentService {
         return response;
     }
 
+    public AppointmentResponseDto updateStatusAsTherapist(Long id, Status status, String therapistEmail) throws AccessDeniedException {
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Randevu bulunamadı"));
+
+        String therapistEmailFromDb = appointment.getTherapist().getUser().getEmail();
+
+        if (!therapistEmail.equals(therapistEmailFromDb)) {
+            throw new AccessDeniedException("Bu randevuyu güncellemeye yetkiniz yok.");
+        }
+
+        appointment.setStatus(status);
+        Appointment updated = appointmentRepository.save(appointment);
+        return modelMapper.map(updated, AppointmentResponseDto.class);
+    }
+
+    public AppointmentResponseDto requestCancelByClient(Long appointmentId, Status status, String clientEmail) throws AccessDeniedException {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Randevu bulunamadı"));
+
+        String emailFromDb = appointment.getClient().getUser().getEmail();
+
+        if (!emailFromDb.equals(clientEmail)) {
+            throw new AccessDeniedException("Bu randevuya ait iptal isteğinde bulunamazsınız.");
+        }
+
+        if (!status.equals(Status.CANCEL_REQUESTED_BY_CLIENT)) {
+            throw new AccessDeniedException("Sadece iptal talebinde bulunabilirsiniz.");
+        }
+
+        appointment.setStatus(status);
+        Appointment updated = appointmentRepository.save(appointment);
+        return modelMapper.map(updated, AppointmentResponseDto.class);
+    }
+
+
     public List<AppointmentResponseDto> getAppointmentsByClientId(Long clientId) {
         List<Appointment> appointments = appointmentRepository.findByClientId(clientId);
         return appointments.stream()
@@ -97,6 +133,8 @@ public class AppointmentService {
         dto.setStatus(appointment.getStatus().toString());
         return dto;
     }
+
+
 
 
 

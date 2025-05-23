@@ -8,5 +8,6 @@ public enum Status {
     NO_SHOW,
     RESCHEDULED,
     PENDING_APPROVAL,
-    IN_PROGRESS
+    IN_PROGRESS,
+    CANCEL_REQUESTED_BY_CLIENT
 }
