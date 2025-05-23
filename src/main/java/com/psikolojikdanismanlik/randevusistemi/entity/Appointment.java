@@ -38,6 +38,9 @@ public class Appointment {
     @OneToOne(mappedBy = "appointment", cascade = CascadeType.ALL)
     private Feedback feedback;
 
+    @Column(name = "start_time", nullable = false)
+    private LocalDateTime startTime;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
