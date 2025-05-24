@@ -1,6 +1,7 @@
 package com.psikolojikdanismanlik.randevusistemi.service;
 
 import com.psikolojikdanismanlik.randevusistemi.dto.request.AppointmentRequest;
+import com.psikolojikdanismanlik.randevusistemi.dto.request.RescheduleRequestDto;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.AppointmentResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.entity.Appointment;
 import com.psikolojikdanismanlik.randevusistemi.entity.Client;
@@ -12,7 +13,6 @@ import com.psikolojikdanismanlik.randevusistemi.repository.ClientRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.TherapistRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
-
 import java.nio.file.AccessDeniedException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -104,6 +104,30 @@ public class AppointmentService {
         }
 
         appointment.setStatus(status);
+        Appointment updated = appointmentRepository.save(appointment);
+        return modelMapper.map(updated, AppointmentResponseDto.class);
+    }
+
+    public AppointmentResponseDto requestRescheduleByClient(Long appointmentId, RescheduleRequestDto request, String clientEmail) throws AccessDeniedException {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Randevu bulunamadı"));
+
+        String emailFromDb = appointment.getClient().getUser().getEmail();
+
+        if (!emailFromDb.equals(clientEmail)) {
+            throw new AccessDeniedException("Bu randevuyu yeniden planlama yetkiniz yok.");
+        }
+
+        boolean isAvailable = availabilityRepository.existsByTherapistAndStartTime(
+                appointment.getTherapist(), request.getNewTime()
+        );
+        if (!isAvailable) {
+            throw new RuntimeException("Yeni istenilen saat terapist için uygun değil.");
+        }
+
+        appointment.setStatus(Status.RESCHEDULE_REQUESTED_BY_CLIENT);
+        appointment.setRequestedRescheduleTime(request.getNewTime());
+
         Appointment updated = appointmentRepository.save(appointment);
         return modelMapper.map(updated, AppointmentResponseDto.class);
     }

@@ -47,6 +47,9 @@ public class Appointment {
     @Column(name = "created_date", nullable = false, updatable = false)
     private LocalDate createdDate;
 
+    @Column(name = "requested_reschedule_time")
+    private LocalDateTime requestedRescheduleTime;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
