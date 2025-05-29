@@ -1,5 +1,6 @@
 package com.psikolojikdanismanlik.randevusistemi.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -33,9 +34,11 @@ public class Therapist {
     private String about;
 
     @OneToMany(mappedBy = "therapist", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Appointment> appointments = new ArrayList<>();
 
     @OneToMany(mappedBy = "therapist", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Availability> availabilities = new ArrayList<>();
 
 }

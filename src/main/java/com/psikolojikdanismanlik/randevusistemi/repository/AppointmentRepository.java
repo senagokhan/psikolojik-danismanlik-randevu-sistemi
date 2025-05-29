@@ -10,5 +10,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findByClientId(Long clientId);
     List<Appointment> findByTherapistId(Long therapistId);
     boolean existsByClientIdAndStartTime(Long clientId, LocalDateTime startTime);
+    void deleteAllByTherapistId(Long therapistId);
+
 
 }
