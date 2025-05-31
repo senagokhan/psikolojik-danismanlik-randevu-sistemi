@@ -1,6 +1,7 @@
 package com.psikolojikdanismanlik.randevusistemi.controller;
 
 import com.psikolojikdanismanlik.randevusistemi.dto.request.ClientRequest;
+import com.psikolojikdanismanlik.randevusistemi.dto.request.ClientUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.AppointmentResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.entity.Client;
 import com.psikolojikdanismanlik.randevusistemi.service.AppointmentService;
@@ -43,5 +44,16 @@ public class ClientController {
         clientService.deleteClientById(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Client> updateClient(
+            @PathVariable Long id,
+            @RequestBody ClientUpdateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) throws AccessDeniedException {
+        Client updated = clientService.updateClient(id, request, userDetails.getUsername());
+        return ResponseEntity.ok(updated);
+    }
+
 
 }

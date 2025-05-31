@@ -1,10 +1,13 @@
 package com.psikolojikdanismanlik.randevusistemi.service;
 
+import com.psikolojikdanismanlik.randevusistemi.dto.request.ClientUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.TherapistRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.TherapistUpdateRequest;
+import com.psikolojikdanismanlik.randevusistemi.entity.Client;
 import com.psikolojikdanismanlik.randevusistemi.entity.Therapist;
 import com.psikolojikdanismanlik.randevusistemi.entity.User;
 import com.psikolojikdanismanlik.randevusistemi.repository.AppointmentRepository;
+import com.psikolojikdanismanlik.randevusistemi.repository.ClientRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.TherapistRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -85,4 +88,6 @@ public class TherapistService {
         therapistRepository.delete(therapist);
         userRepository.delete(user);
     }
+
+
 }
