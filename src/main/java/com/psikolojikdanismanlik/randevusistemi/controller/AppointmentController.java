@@ -23,8 +23,11 @@ public class AppointmentController {
     }
 
     @PostMapping
-    public ResponseEntity<AppointmentResponseDto> createAppointment(@RequestBody AppointmentRequest request) {
-        AppointmentResponseDto appointment = appointmentService.createAppointment(request);
+    public ResponseEntity<AppointmentResponseDto> createAppointment(
+            @RequestBody AppointmentRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        AppointmentResponseDto appointment = appointmentService.createAppointment(request, userDetails.getUsername());
         return new ResponseEntity<>(appointment, HttpStatus.CREATED);
     }
 

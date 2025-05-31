@@ -50,6 +50,9 @@ public class Appointment {
     @Column(name = "requested_reschedule_time")
     private LocalDateTime requestedRescheduleTime;
 
+    @ManyToOne
+    private Availability availability;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

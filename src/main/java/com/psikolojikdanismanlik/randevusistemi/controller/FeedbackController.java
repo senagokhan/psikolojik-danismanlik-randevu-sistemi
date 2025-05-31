@@ -30,4 +30,24 @@ public class FeedbackController {
         FeedbackResponseDto response = feedbackService.addFeedback(appointmentId, request, userDetails.getUsername());
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
+    @PutMapping("/appointments/{appointmentId}")
+    public ResponseEntity<FeedbackResponseDto> updateFeedback(
+            @PathVariable Long appointmentId,
+            @RequestBody FeedbackRequestDto request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) throws AccessDeniedException {
+        FeedbackResponseDto response = feedbackService.updateFeedback(appointmentId, request, userDetails.getUsername());
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/appointments/{appointmentId}")
+    public ResponseEntity<Void> deleteFeedback(
+            @PathVariable Long appointmentId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) throws AccessDeniedException {
+        feedbackService.deleteFeedback(appointmentId, userDetails.getUsername());
+        return ResponseEntity.noContent().build();
+    }
 }
+

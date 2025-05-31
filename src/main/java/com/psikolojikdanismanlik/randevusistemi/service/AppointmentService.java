@@ -3,14 +3,10 @@ package com.psikolojikdanismanlik.randevusistemi.service;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.AppointmentRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.RescheduleRequestDto;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.AppointmentResponseDto;
-import com.psikolojikdanismanlik.randevusistemi.entity.Appointment;
-import com.psikolojikdanismanlik.randevusistemi.entity.Client;
-import com.psikolojikdanismanlik.randevusistemi.entity.Therapist;
+import com.psikolojikdanismanlik.randevusistemi.entity.*;
+import com.psikolojikdanismanlik.randevusistemi.enums.Role;
 import com.psikolojikdanismanlik.randevusistemi.enums.Status;
-import com.psikolojikdanismanlik.randevusistemi.repository.AppointmentRepository;
-import com.psikolojikdanismanlik.randevusistemi.repository.AvailabilityRepository;
-import com.psikolojikdanismanlik.randevusistemi.repository.ClientRepository;
-import com.psikolojikdanismanlik.randevusistemi.repository.TherapistRepository;
+import com.psikolojikdanismanlik.randevusistemi.repository.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import java.nio.file.AccessDeniedException;
@@ -24,54 +20,49 @@ public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final ClientRepository clientRepository;
-    private final TherapistRepository therapistRepository;
     private final AvailabilityRepository availabilityRepository;
     private final ModelMapper modelMapper;
+    private final UserRepository userRepository;
 
-    public AppointmentService(AppointmentRepository appointmentRepository, ClientRepository clientRepository, TherapistRepository therapistRepository, AvailabilityRepository availabilityRepository, ModelMapper modelMapper) {
+    public AppointmentService(AppointmentRepository appointmentRepository, ClientRepository clientRepository, AvailabilityRepository availabilityRepository, ModelMapper modelMapper, UserRepository userRepository) {
         this.appointmentRepository = appointmentRepository;
         this.clientRepository = clientRepository;
-        this.therapistRepository = therapistRepository;
+        this.userRepository = userRepository;
         this.availabilityRepository = availabilityRepository;
         this.modelMapper = modelMapper;
     }
 
-    public AppointmentResponseDto createAppointment(AppointmentRequest request) {
-        Client client = clientRepository.findById(request.getClientId())
-                .orElseThrow(() -> new RuntimeException("Danışan bulunamadı"));
+    public AppointmentResponseDto createAppointment(AppointmentRequest request, String clientEmail) {
+        User user = userRepository.findByEmail(clientEmail)
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
 
-        Therapist therapist = therapistRepository.findById(request.getTherapistId())
-                .orElseThrow(() -> new RuntimeException("Terapist bulunamadı"));
-
-        boolean alreadyBooked = appointmentRepository.existsByClientIdAndStartTime(client.getId(), request.getStartTime());
-        if (alreadyBooked) {
-            throw new RuntimeException("Bu saatte zaten bir randevunuz var.");
+        if (user.getRole() != Role.CLIENT) {
+            throw new RuntimeException("Sadece danışanlar randevu alabilir.");
         }
 
-        boolean isAvailable = availabilityRepository.existsByTherapistAndStartTime(therapist, request.getStartTime());
-        if (!isAvailable) {
-            throw new RuntimeException("Bu saat terapist için uygun değil");
+        Client client = clientRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Danışan bulunamadı"));
+
+        Availability availability = availabilityRepository.findById(request.getAvailabilityId())
+                .orElseThrow(() -> new RuntimeException("Uygunluk bilgisi bulunamadı"));
+
+        if (availability.isBooked()) {
+            throw new RuntimeException("Bu saat zaten rezerve edilmiş.");
         }
 
         Appointment appointment = new Appointment();
-        appointment.setStartTime(request.getStartTime());
         appointment.setClient(client);
-        appointment.setTherapist(therapist);
-        appointment.setStatus(Status.SCHEDULED);
+        appointment.setTherapist(availability.getTherapist());
+        appointment.setAvailability(availability);
+        appointment.setStatus(Status.PENDING);
         appointment.setCreatedAt(LocalDateTime.now());
-        appointment.setCreatedDate(LocalDate.now());
 
-        Appointment savedAppointment = appointmentRepository.save(appointment);
+        availability.setBooked(true);
+        availabilityRepository.save(availability);
 
-        AppointmentResponseDto response = new AppointmentResponseDto();
-        response.setId(savedAppointment.getId());
-        response.setStartTime(savedAppointment.getStartTime());
-        response.setCreatedDate(savedAppointment.getCreatedDate());
-        response.setStatus(savedAppointment.getStatus().name());
-        response.setTherapistId(savedAppointment.getTherapist().getId());
-        response.setClientId(savedAppointment.getClient().getId());
+        appointmentRepository.save(appointment);
 
-        return response;
+        return modelMapper.map(appointment, AppointmentResponseDto.class);
     }
 
     public AppointmentResponseDto updateStatusAsTherapist(Long id, Status status, String therapistEmail) throws AccessDeniedException {

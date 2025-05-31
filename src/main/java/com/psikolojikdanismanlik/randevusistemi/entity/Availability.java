@@ -31,4 +31,7 @@ public class Availability {
     @Column(name = "end_time", nullable = false)
     private LocalDateTime endTime;
 
+    private boolean booked;
+
+
 }

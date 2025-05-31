@@ -6,6 +6,15 @@ public class AppointmentRequest {
     private Long clientId;
     private Long therapistId;
     private LocalDateTime startTime;
+    private Long availabilityId;
+
+    public Long getAvailabilityId() {
+        return availabilityId;
+    }
+
+    public void setAvailabilityId(Long availabilityId) {
+        this.availabilityId = availabilityId;
+    }
 
     public Long getClientId() {
         return clientId;
