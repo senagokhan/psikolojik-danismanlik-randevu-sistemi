@@ -31,13 +31,31 @@ public class NoteController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    @PutMapping("/appointments/{appointmentId}")
+    public ResponseEntity<NoteResponseDto> updateNote(
+            @PathVariable Long appointmentId,
+            @RequestBody NoteRequestDto request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) throws AccessDeniedException {
+        NoteResponseDto response = noteService.updateNote(appointmentId, request, userDetails.getUsername());
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/appointments/{appointmentId}")
+    public ResponseEntity<Void> deleteNote(
+            @PathVariable Long appointmentId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) throws AccessDeniedException {
+        noteService.deleteNote(appointmentId, userDetails.getUsername());
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/appointments/{appointmentId}")
     public ResponseEntity<NoteResponseDto> getNote(
             @PathVariable Long appointmentId,
             @AuthenticationPrincipal UserDetails userDetails
     ) throws AccessDeniedException {
-        NoteResponseDto note = noteService.getNoteForTherapist(appointmentId, userDetails.getUsername());
-        return ResponseEntity.ok(note);
+        NoteResponseDto response = noteService.getNoteForTherapist(appointmentId, userDetails.getUsername());
+        return ResponseEntity.ok(response);
     }
-
 }

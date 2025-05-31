@@ -5,6 +5,8 @@ import com.psikolojikdanismanlik.randevusistemi.dto.request.UserRegisterRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.UserUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.UserResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.entity.User;
+import com.psikolojikdanismanlik.randevusistemi.repository.ClientRepository;
+import com.psikolojikdanismanlik.randevusistemi.repository.TherapistRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.UserRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,15 +15,21 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.AccessDeniedException;
+
 @Service
 public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
+    private final ClientRepository clientRepository;
+    private final TherapistRepository therapistRepository;
     private final ModelMapper modelMapper;
     private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, ModelMapper modelMapper, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, ClientRepository clientRepository, TherapistRepository therapistRepository, ModelMapper modelMapper, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.clientRepository = clientRepository;
+        this.therapistRepository = therapistRepository;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
     }
@@ -81,5 +89,31 @@ public class UserService implements UserDetailsService {
         userRepository.save(user);
         return modelMapper.map(user, UserResponseDto.class);
     }
+
+    public void deleteUser(Long userId, String currentEmail) throws AccessDeniedException {
+        User userToDelete = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
+
+        User currentUser = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new RuntimeException("Geçerli kullanıcı bulunamadı."));
+
+        boolean isOwner = userToDelete.getEmail().equals(currentEmail);
+        boolean isAdmin = currentUser.getRole().name().equals("ADMIN");
+
+        if (!isOwner && !isAdmin) {
+            throw new AccessDeniedException("Bu işlemi yapmaya yetkiniz yok.");
+        }
+
+        if (userToDelete.getClient() != null) {
+            clientRepository.deleteById(userToDelete.getClient().getId());
+        }
+
+        if (userToDelete.getTherapist() != null) {
+            therapistRepository.deleteById(userToDelete.getTherapist().getId());
+        }
+
+        userRepository.deleteById(userId);
+    }
+
 }
 

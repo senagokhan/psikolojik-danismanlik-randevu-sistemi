@@ -31,7 +31,7 @@ public class AppointmentController {
         return new ResponseEntity<>(appointment, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{id}/status")
     public ResponseEntity<AppointmentResponseDto> updateStatus(
             @PathVariable Long id,
             @RequestBody AppointmentStatusUpdateRequest request,

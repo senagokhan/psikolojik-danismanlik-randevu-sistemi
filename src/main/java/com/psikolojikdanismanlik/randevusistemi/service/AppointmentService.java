@@ -57,6 +57,9 @@ public class AppointmentService {
         appointment.setStatus(Status.PENDING);
         appointment.setCreatedAt(LocalDateTime.now());
 
+        appointment.setStartTime(availability.getStartTime());
+        appointment.setEndTime(availability.getEndTime());
+
         availability.setBooked(true);
         availabilityRepository.save(availability);
 

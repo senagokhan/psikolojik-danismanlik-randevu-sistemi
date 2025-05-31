@@ -70,4 +70,41 @@ public class NoteService {
         return dto;
     }
 
+    public NoteResponseDto updateNote(Long appointmentId, NoteRequestDto request, String therapistEmail) throws AccessDeniedException {
+        Note note = noteRepository.findByAppointmentId(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Not bulunamadı"));
+
+        String actualTherapistEmail = note.getAppointment().getTherapist().getUser().getEmail();
+        if (!actualTherapistEmail.equals(therapistEmail)) {
+            throw new AccessDeniedException("Bu notu güncellemeye yetkiniz yok.");
+        }
+
+        note.setContent(request.getContent());
+        note.setPrivate(request.isPrivate());
+
+        Note updatedNote = noteRepository.save(note);
+
+        NoteResponseDto response = new NoteResponseDto();
+        response.setId(updatedNote.getId());
+        response.setContent(updatedNote.getContent());
+        response.setPrivate(updatedNote.isPrivate());
+        response.setCreatedAt(updatedNote.getCreatedAt());
+
+        return response;
+    }
+
+    public void deleteNote(Long appointmentId, String therapistEmail) throws AccessDeniedException {
+        Note note = noteRepository.findByAppointmentId(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Not bulunamadı"));
+
+        String actualTherapistEmail = note.getAppointment().getTherapist().getUser().getEmail();
+        if (!actualTherapistEmail.equals(therapistEmail)) {
+            throw new AccessDeniedException("Bu notu silmeye yetkiniz yok.");
+        }
+
+        noteRepository.delete(note);
+    }
 }
+
+
+

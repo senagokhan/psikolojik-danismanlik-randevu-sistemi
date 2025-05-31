@@ -33,6 +33,7 @@ public class FeedbackService {
         feedback.setRating((int) request.getRating());
         feedback.setCreatedAt(LocalDateTime.now());
         feedback.setClient(appointment.getClient());
+        feedback.setAppointment(appointment);
 
         appointment.setFeedback(feedback);
         appointmentRepository.save(appointment);

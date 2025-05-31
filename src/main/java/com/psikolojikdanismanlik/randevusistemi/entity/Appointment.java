@@ -41,6 +41,9 @@ public class Appointment {
     @Column(name = "start_time", nullable = false)
     private LocalDateTime startTime;
 
+    @Column(name = "end_time", nullable = false)
+    private LocalDateTime endTime;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
