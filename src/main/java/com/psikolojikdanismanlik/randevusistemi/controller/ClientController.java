@@ -7,8 +7,11 @@ import com.psikolojikdanismanlik.randevusistemi.service.AppointmentService;
 import com.psikolojikdanismanlik.randevusistemi.service.ClientService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @RestController
@@ -31,4 +34,14 @@ public class ClientController {
         List<AppointmentResponseDto> appointments = appointmentService.getAppointmentsByClientId(id);
         return ResponseEntity.ok(appointments);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteClient(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) throws AccessDeniedException {
+        clientService.deleteClientById(id, userDetails.getUsername());
+        return ResponseEntity.noContent().build();
+    }
+
 }

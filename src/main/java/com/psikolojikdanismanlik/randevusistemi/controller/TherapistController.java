@@ -63,8 +63,4 @@ public class TherapistController {
         therapistService.deleteTherapist(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
-
-
-
-
 }
