@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -128,6 +129,20 @@ public class UserService implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
         return user.getRole() == Role.ADMIN;
+    }
+
+    public List<UserResponseDto> getUsersByRole(Role role, String requesterEmail) throws AccessDeniedException {
+        User requester = userRepository.findByEmail(requesterEmail)
+                .orElseThrow(() -> new RuntimeException("İstek yapan kullanıcı bulunamadı."));
+
+        if (requester.getRole() != Role.ADMIN) {
+            throw new AccessDeniedException("Sadece admin kullanıcılar bu işlemi yapabilir.");
+        }
+
+        List<User> users = userRepository.findByRole(role);
+        return users.stream()
+                .map(user -> modelMapper.map(user, UserResponseDto.class))
+                .collect(Collectors.toList());
     }
 
 

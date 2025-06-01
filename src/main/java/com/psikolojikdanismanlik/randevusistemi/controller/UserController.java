@@ -2,6 +2,7 @@ package com.psikolojikdanismanlik.randevusistemi.controller;
 
 import com.psikolojikdanismanlik.randevusistemi.dto.request.UserUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.UserResponseDto;
+import com.psikolojikdanismanlik.randevusistemi.enums.Role;
 import com.psikolojikdanismanlik.randevusistemi.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -51,6 +52,16 @@ public class UserController {
         List<UserResponseDto> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
+
+    @GetMapping("/role")
+    public ResponseEntity<List<UserResponseDto>> getUsersByRole(
+            @RequestParam Role role,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) throws AccessDeniedException {
+        List<UserResponseDto> users = userService.getUsersByRole(role, userDetails.getUsername());
+        return ResponseEntity.ok(users);
+    }
+
 
 
 }
