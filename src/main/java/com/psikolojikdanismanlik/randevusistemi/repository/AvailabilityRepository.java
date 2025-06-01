@@ -8,4 +8,6 @@ import java.time.LocalDateTime;
 
 public interface AvailabilityRepository extends JpaRepository<Availability, Long> {
     boolean existsByTherapistAndStartTime(Therapist therapist, LocalDateTime startTime);
+    boolean existsByTherapistIdAndStartTime(Long therapistId, LocalDateTime startTime);
+
 }

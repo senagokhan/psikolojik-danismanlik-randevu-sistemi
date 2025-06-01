@@ -10,6 +10,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
+import java.time.LocalDateTime;
 
 @Service
 public class AvailabilityService {
@@ -82,6 +83,9 @@ public class AvailabilityService {
         return response;
     }
 
+    public boolean isTherapistAvailableOn(Long therapistId, LocalDateTime desiredTime) {
+        return availabilityRepository.existsByTherapistIdAndStartTime(therapistId, desiredTime);
+    }
 
 
 }
