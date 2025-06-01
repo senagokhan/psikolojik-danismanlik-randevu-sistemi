@@ -4,6 +4,7 @@ import com.psikolojikdanismanlik.randevusistemi.dto.request.AvailabilityRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.TherapistRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.TherapistUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.AppointmentResponseDto;
+import com.psikolojikdanismanlik.randevusistemi.dto.response.ClientResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.TherapistResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.entity.Availability;
 import com.psikolojikdanismanlik.randevusistemi.entity.Therapist;
@@ -47,19 +48,14 @@ public class TherapistController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Therapist> updateTherapist(
-            @PathVariable Long id,
-            @RequestBody TherapistUpdateRequest request,
-            @AuthenticationPrincipal UserDetails userDetails
+    public ResponseEntity<Therapist> updateTherapist(@PathVariable Long id, @RequestBody TherapistUpdateRequest request, @AuthenticationPrincipal UserDetails userDetails
     ) throws AccessDeniedException {
         Therapist updated = therapistService.updateTherapist(id, request, userDetails.getUsername());
         return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTherapist(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails
+    public ResponseEntity<Void> deleteTherapist(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails
     ) throws AccessDeniedException {
         therapistService.deleteTherapist(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
@@ -69,6 +65,12 @@ public class TherapistController {
     public ResponseEntity<List<TherapistResponseDto>> getAllTherapists() {
         List<TherapistResponseDto> therapists = therapistService.getAllTherapists();
         return ResponseEntity.ok(therapists);
+    }
+
+    @GetMapping("/clients")
+    public ResponseEntity<List<ClientResponseDto>> getClientsOfTherapist(@AuthenticationPrincipal UserDetails userDetails) {
+        List<ClientResponseDto> clients = therapistService.getClientsOfTherapist(userDetails.getUsername());
+        return ResponseEntity.ok(clients);
     }
 
 }

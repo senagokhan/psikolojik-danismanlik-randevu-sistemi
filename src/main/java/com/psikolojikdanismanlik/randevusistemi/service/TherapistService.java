@@ -3,7 +3,9 @@ package com.psikolojikdanismanlik.randevusistemi.service;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.ClientUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.TherapistRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.TherapistUpdateRequest;
+import com.psikolojikdanismanlik.randevusistemi.dto.response.ClientResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.TherapistResponseDto;
+import com.psikolojikdanismanlik.randevusistemi.entity.Appointment;
 import com.psikolojikdanismanlik.randevusistemi.entity.Client;
 import com.psikolojikdanismanlik.randevusistemi.entity.Therapist;
 import com.psikolojikdanismanlik.randevusistemi.entity.User;
@@ -16,6 +18,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class TherapistService {
@@ -100,6 +104,28 @@ public class TherapistService {
                 .map(therapist -> modelMapper.map(therapist, TherapistResponseDto.class))
                 .toList();
     }
+
+    public List<ClientResponseDto> getClientsOfTherapist(String therapistEmail) {
+        Therapist therapist = therapistRepository.findByUserEmail(therapistEmail)
+                .orElseThrow(() -> new RuntimeException("Terapist bulunamadı."));
+
+        List<Appointment> appointments = appointmentRepository.findByTherapistId(therapist.getId());
+
+        Set<Client> uniqueClients = appointments.stream()
+                .map(Appointment::getClient)
+                .collect(Collectors.toSet());
+
+        return uniqueClients.stream().map(client -> {
+            ClientResponseDto dto = new ClientResponseDto();
+            dto.setId(client.getId());
+            dto.setFullName(client.getUser().getFullName());
+            dto.setEmail(client.getUser().getEmail());
+            dto.setPhoneNumber(client.getUser().getPhoneNumber());
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+
 
 
 
