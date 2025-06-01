@@ -5,6 +5,7 @@ import com.psikolojikdanismanlik.randevusistemi.dto.request.UserRegisterRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.UserUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.UserResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.entity.User;
+import com.psikolojikdanismanlik.randevusistemi.enums.Role;
 import com.psikolojikdanismanlik.randevusistemi.repository.ClientRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.TherapistRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.UserRepository;
@@ -16,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
+import java.util.List;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -114,6 +116,20 @@ public class UserService implements UserDetailsService {
 
         userRepository.deleteById(userId);
     }
+
+    public List<UserResponseDto> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return users.stream()
+                .map(user -> modelMapper.map(user, UserResponseDto.class))
+                .toList();
+    }
+
+    public boolean isAdmin(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+        return user.getRole() == Role.ADMIN;
+    }
+
 
 }
 

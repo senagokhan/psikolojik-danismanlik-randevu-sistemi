@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.AccessDeniedException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -41,6 +42,15 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/list")
+    public ResponseEntity<List<UserResponseDto>> getAllUsers(@AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
+        if (!userService.isAdmin(userDetails.getUsername())) {
+            throw new AccessDeniedException("Yetkisiz erişim.");
+        }
+
+        List<UserResponseDto> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
 
 
 }
