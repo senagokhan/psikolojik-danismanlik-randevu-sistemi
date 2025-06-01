@@ -3,6 +3,7 @@ package com.psikolojikdanismanlik.randevusistemi.service;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.ClientUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.TherapistRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.TherapistUpdateRequest;
+import com.psikolojikdanismanlik.randevusistemi.dto.response.TherapistResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.entity.Client;
 import com.psikolojikdanismanlik.randevusistemi.entity.Therapist;
 import com.psikolojikdanismanlik.randevusistemi.entity.User;
@@ -10,9 +11,11 @@ import com.psikolojikdanismanlik.randevusistemi.repository.AppointmentRepository
 import com.psikolojikdanismanlik.randevusistemi.repository.ClientRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.TherapistRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.UserRepository;
+import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.nio.file.AccessDeniedException;
+import java.util.List;
 
 @Service
 public class TherapistService {
@@ -21,13 +24,15 @@ public class TherapistService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AppointmentRepository appointmentRepository;
+    private final ModelMapper modelMapper;
 
 
-    public TherapistService(TherapistRepository therapistRepository, UserRepository userRepository, PasswordEncoder passwordEncoder, AppointmentRepository appointmentRepository) {
+    public TherapistService(TherapistRepository therapistRepository, UserRepository userRepository, PasswordEncoder passwordEncoder, AppointmentRepository appointmentRepository, ModelMapper modelMapper) {
         this.therapistRepository = therapistRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.appointmentRepository = appointmentRepository;
+        this.modelMapper = modelMapper;
     }
 
     public Therapist createTherapist(TherapistRequest request) {
@@ -88,6 +93,14 @@ public class TherapistService {
         therapistRepository.delete(therapist);
         userRepository.delete(user);
     }
+
+    public List<TherapistResponseDto> getAllTherapists() {
+        List<Therapist> therapists = therapistRepository.findAll();
+        return therapists.stream()
+                .map(therapist -> modelMapper.map(therapist, TherapistResponseDto.class))
+                .toList();
+    }
+
 
 
 }

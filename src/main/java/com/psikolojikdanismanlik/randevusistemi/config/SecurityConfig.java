@@ -1,6 +1,8 @@
 package com.psikolojikdanismanlik.randevusistemi.config;
 
 import com.psikolojikdanismanlik.randevusistemi.filter.JwtAuthenticationFilter;
+import com.psikolojikdanismanlik.randevusistemi.repository.ClientRepository;
+import com.psikolojikdanismanlik.randevusistemi.repository.TherapistRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.UserRepository;
 import com.psikolojikdanismanlik.randevusistemi.service.UserService;
 import com.psikolojikdanismanlik.randevusistemi.util.JwtUtil;
@@ -30,8 +32,8 @@ public class SecurityConfig {
 
 
     @Bean
-    public UserDetailsService userDetailsService(UserRepository userRepository, ModelMapper modelMapper, PasswordEncoder passwordEncoder) {
-        return new UserService(userRepository, modelMapper, passwordEncoder);
+    public UserDetailsService userDetailsService(UserRepository userRepository, ClientRepository clientRepository, TherapistRepository therapistRepository, ModelMapper modelMapper, PasswordEncoder passwordEncoder) {
+        return new UserService(userRepository,clientRepository,therapistRepository, modelMapper, passwordEncoder);
     }
 
     @Bean

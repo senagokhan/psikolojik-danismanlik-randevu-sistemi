@@ -4,6 +4,7 @@ import com.psikolojikdanismanlik.randevusistemi.dto.request.AvailabilityRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.TherapistRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.TherapistUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.AppointmentResponseDto;
+import com.psikolojikdanismanlik.randevusistemi.dto.response.TherapistResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.entity.Availability;
 import com.psikolojikdanismanlik.randevusistemi.entity.Therapist;
 import com.psikolojikdanismanlik.randevusistemi.service.AppointmentService;
@@ -63,4 +64,11 @@ public class TherapistController {
         therapistService.deleteTherapist(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping
+    public ResponseEntity<List<TherapistResponseDto>> getAllTherapists() {
+        List<TherapistResponseDto> therapists = therapistService.getAllTherapists();
+        return ResponseEntity.ok(therapists);
+    }
+
 }

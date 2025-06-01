@@ -35,7 +35,6 @@ public class Feedback {
     @JoinColumn(name = "appointment_id", referencedColumnName = "id")
     private Appointment appointment;
 
-
     @ManyToOne
     @JoinColumn(name = "client_id")
     private Client client;
