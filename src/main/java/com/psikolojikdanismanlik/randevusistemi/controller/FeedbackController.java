@@ -49,5 +49,11 @@ public class FeedbackController {
         feedbackService.deleteFeedback(appointmentId, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/therapists/{therapistId}/average-rating")
+    public ResponseEntity<Double> getAverageRatingForTherapist(@PathVariable Long therapistId) {
+        Double average = feedbackService.getAverageRatingForTherapist(therapistId);
+        return ResponseEntity.ok(average);
+    }
 }
 

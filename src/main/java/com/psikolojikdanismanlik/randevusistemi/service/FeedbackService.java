@@ -16,9 +16,11 @@ import java.time.LocalDateTime;
 public class FeedbackService {
 
     private final AppointmentRepository appointmentRepository;
+    private final FeedbackRepository feedbackRepository;
 
-    public FeedbackService(AppointmentRepository appointmentRepository) {
+    public FeedbackService(AppointmentRepository appointmentRepository, FeedbackRepository feedbackRepository) {
         this.appointmentRepository = appointmentRepository;
+        this.feedbackRepository = feedbackRepository;
     }
 
     public FeedbackResponseDto addFeedback(Long appointmentId, FeedbackRequestDto request, String clientEmail) throws AccessDeniedException {
@@ -92,5 +94,11 @@ public class FeedbackService {
         response.setCreatedAt(feedback.getCreatedAt());
         return response;
     }
+
+    public Double getAverageRatingForTherapist(Long therapistId) {
+        Double avg = feedbackRepository.findAverageRatingByTherapistId(therapistId);
+        return avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0;  // 1 ondalık yuvarlama
+    }
+
 
 }

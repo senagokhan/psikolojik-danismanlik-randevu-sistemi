@@ -65,4 +65,14 @@ public class AppointmentController {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteAppointmentAsTherapist(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) throws AccessDeniedException {
+        appointmentService.deleteAppointmentAsTherapist(id, userDetails.getUsername());
+        return ResponseEntity.noContent().build();
+    }
+
+
 }

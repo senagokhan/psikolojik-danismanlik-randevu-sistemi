@@ -10,7 +10,6 @@ import com.psikolojikdanismanlik.randevusistemi.repository.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import java.nio.file.AccessDeniedException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -126,7 +125,6 @@ public class AppointmentService {
         return modelMapper.map(updated, AppointmentResponseDto.class);
     }
 
-
     public List<AppointmentResponseDto> getAppointmentsByClientId(Long clientId) {
         List<Appointment> appointments = appointmentRepository.findByClientId(clientId);
         return appointments.stream()
@@ -152,8 +150,25 @@ public class AppointmentService {
         return dto;
     }
 
+    public void deleteAppointmentAsTherapist(Long appointmentId, String therapistEmail) throws AccessDeniedException {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Randevu bulunamadı."));
 
+        if (appointment.getStatus() != Status.PENDING) {
+            throw new RuntimeException("Sadece bekleyen randevular silinebilir.");
+        }
 
+        String therapistEmailFromDb = appointment.getTherapist().getUser().getEmail();
 
+        if (!therapistEmailFromDb.equals(therapistEmail)) {
+            throw new AccessDeniedException("Bu randevuyu silme yetkiniz yok.");
+        }
 
+        Availability availability = appointment.getAvailability();
+        if (availability != null) {
+            availability.setBooked(false);
+            availabilityRepository.save(availability);
+        }
+        appointmentRepository.delete(appointment);
+    }
 }
