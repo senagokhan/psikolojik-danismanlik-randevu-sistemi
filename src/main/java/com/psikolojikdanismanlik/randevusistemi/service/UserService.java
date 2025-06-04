@@ -10,6 +10,8 @@ import com.psikolojikdanismanlik.randevusistemi.repository.ClientRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.TherapistRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.UserRepository;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -37,6 +39,39 @@ public class UserService implements UserDetailsService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    public UserResponseDto register(UserRegisterRequest request) {
+        try {
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new IllegalArgumentException("Bu e-posta adresi zaten kayıtlı.");
+            }
+
+            User user = modelMapper.map(request, User.class);
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            userRepository.save(user);
+
+            return modelMapper.map(user, UserResponseDto.class);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Kayıt işlemi sırasında bir hata oluştu: " + e.getMessage());
+        }
+    }
+
+    public UserResponseDto login(UserLoginRequest request) {
+        try {
+            User user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new RuntimeException("E-posta veya şifre hatalı."));
+
+            if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                throw new RuntimeException("E-posta veya şifre hatalı.");
+            }
+
+            return modelMapper.map(user, UserResponseDto.class);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Giriş işlemi sırasında bir hata oluştu: " + e.getMessage());
+        }
+    }
+
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)
@@ -47,29 +82,6 @@ public class UserService implements UserDetailsService {
                 .password(user.getPassword())
                 .roles(user.getRole().name())
                 .build();
-    }
-
-    public UserResponseDto register(UserRegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Bu e-posta adresi kayıtlı.");
-        }
-
-        User user = modelMapper.map(request, User.class);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        userRepository.save(user);
-
-        return modelMapper.map(user, UserResponseDto.class);
-    }
-
-    public UserResponseDto login(UserLoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("E-posta veya şifre hatalı."));
-
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("E-posta veya şifre hatalı.");
-        }
-
-        return modelMapper.map(user, UserResponseDto.class);
     }
 
     public UserResponseDto getUserById(Long id) {
@@ -118,12 +130,11 @@ public class UserService implements UserDetailsService {
         userRepository.deleteById(userId);
     }
 
-    public List<UserResponseDto> getAllUsers() {
-        List<User> users = userRepository.findAll();
-        return users.stream()
-                .map(user -> modelMapper.map(user, UserResponseDto.class))
-                .toList();
+    public Page<UserResponseDto> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable)
+                .map(user -> modelMapper.map(user, UserResponseDto.class));
     }
+
 
     public boolean isAdmin(String email) {
         User user = userRepository.findByEmail(email)
@@ -143,6 +154,20 @@ public class UserService implements UserDetailsService {
         return users.stream()
                 .map(user -> modelMapper.map(user, UserResponseDto.class))
                 .collect(Collectors.toList());
+    }
+
+    public UserResponseDto updateUserRole(Long userId, Role newRole, String requesterEmail) throws AccessDeniedException {
+        if (!isAdmin(requesterEmail)) {
+            throw new AccessDeniedException("Sadece adminler rol güncellemesi yapabilir.");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+
+        user.setRole(newRole);
+        userRepository.save(user);
+
+        return modelMapper.map(user, UserResponseDto.class);
     }
 
 

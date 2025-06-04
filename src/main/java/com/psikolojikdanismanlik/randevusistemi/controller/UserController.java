@@ -4,6 +4,8 @@ import com.psikolojikdanismanlik.randevusistemi.dto.request.UserUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.UserResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.enums.Role;
 import com.psikolojikdanismanlik.randevusistemi.service.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -44,14 +46,18 @@ public class UserController {
     }
 
     @GetMapping("/list")
-    public ResponseEntity<List<UserResponseDto>> getAllUsers(@AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
+    public ResponseEntity<Page<UserResponseDto>> getAllUsers(
+            @AuthenticationPrincipal UserDetails userDetails,
+            Pageable pageable
+    ) throws AccessDeniedException {
         if (!userService.isAdmin(userDetails.getUsername())) {
             throw new AccessDeniedException("Yetkisiz erişim.");
         }
 
-        List<UserResponseDto> users = userService.getAllUsers();
+        Page<UserResponseDto> users = userService.getAllUsers(pageable);
         return ResponseEntity.ok(users);
     }
+
 
     @GetMapping("/role")
     public ResponseEntity<List<UserResponseDto>> getUsersByRole(
@@ -61,6 +67,17 @@ public class UserController {
         List<UserResponseDto> users = userService.getUsersByRole(role, userDetails.getUsername());
         return ResponseEntity.ok(users);
     }
+
+    @PutMapping("/admin/{userId}/role")
+    public ResponseEntity<UserResponseDto> updateUserRole(
+            @PathVariable Long userId,
+            @RequestParam Role newRole,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) throws AccessDeniedException {
+        UserResponseDto updatedUser = userService.updateUserRole(userId, newRole, userDetails.getUsername());
+        return ResponseEntity.ok(updatedUser);
+    }
+
 
 
 
