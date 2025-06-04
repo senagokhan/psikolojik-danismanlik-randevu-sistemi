@@ -58,7 +58,6 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
-
     @GetMapping("/role")
     public ResponseEntity<List<UserResponseDto>> getUsersByRole(
             @RequestParam Role role,
@@ -76,6 +75,14 @@ public class UserController {
     ) throws AccessDeniedException {
         UserResponseDto updatedUser = userService.updateUserRole(userId, newRole, userDetails.getUsername());
         return ResponseEntity.ok(updatedUser);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDto> getCurrentUser(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        UserResponseDto userDto = userService.getUserByEmail(userDetails.getUsername());
+        return ResponseEntity.ok(userDto);
     }
 
 

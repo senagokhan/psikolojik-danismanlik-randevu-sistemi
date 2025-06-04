@@ -170,6 +170,12 @@ public class UserService implements UserDetailsService {
         return modelMapper.map(user, UserResponseDto.class);
     }
 
+    public UserResponseDto getUserByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+        return modelMapper.map(user, UserResponseDto.class);
+    }
+
 
 }
 
