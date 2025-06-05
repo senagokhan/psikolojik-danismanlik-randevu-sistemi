@@ -84,8 +84,4 @@ public class UserController {
         UserResponseDto userDto = userService.getUserByEmail(userDetails.getUsername());
         return ResponseEntity.ok(userDto);
     }
-
-
-
-
 }

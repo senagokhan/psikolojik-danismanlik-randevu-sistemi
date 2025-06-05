@@ -12,6 +12,10 @@ import com.psikolojikdanismanlik.randevusistemi.service.AppointmentService;
 import com.psikolojikdanismanlik.randevusistemi.service.AvailabilityService;
 import com.psikolojikdanismanlik.randevusistemi.service.TherapistService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -41,11 +45,19 @@ public class TherapistController {
         return new ResponseEntity<>(therapist, HttpStatus.CREATED);
     }
 
-    @GetMapping("/{id}/appointments")
-    public ResponseEntity<List<AppointmentResponseDto>> getAppointmentsByTherapistId(@PathVariable Long id) {
-        List<AppointmentResponseDto> appointments = appointmentService.getAppointmentsByTherapistId(id);
-        return ResponseEntity.ok(appointments);
+
+    @GetMapping("/my-appointments")
+    public ResponseEntity<Page<AppointmentResponseDto>> getAppointmentsByLoggedInTherapist(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdDate").descending());
+        Page<AppointmentResponseDto> response = appointmentService
+                .getAppointmentsByTherapistEmail(userDetails.getUsername(), pageable);
+        return ResponseEntity.ok(response);
     }
+
 
     @PutMapping("/{id}")
     public ResponseEntity<Therapist> updateTherapist(@PathVariable Long id, @RequestBody TherapistUpdateRequest request, @AuthenticationPrincipal UserDetails userDetails

@@ -6,6 +6,10 @@ import com.psikolojikdanismanlik.randevusistemi.dto.response.AppointmentResponse
 import com.psikolojikdanismanlik.randevusistemi.entity.Client;
 import com.psikolojikdanismanlik.randevusistemi.service.AppointmentService;
 import com.psikolojikdanismanlik.randevusistemi.service.ClientService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,10 +35,15 @@ public class ClientController {
     }
 
     @GetMapping("/{id}/appointments")
-    public ResponseEntity<List<AppointmentResponseDto>> getAppointmentsByClientId(@PathVariable Long id) {
-        List<AppointmentResponseDto> appointments = appointmentService.getAppointmentsByClientId(id);
+    public ResponseEntity<Page<AppointmentResponseDto>> getAppointmentsByClientId(
+            @PathVariable Long id,
+            @PageableDefault(size = 5, sort = "createdDate", direction = Sort.Direction.DESC) Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        Page<AppointmentResponseDto> appointments = appointmentService.getAppointmentsByClientId(id, pageable, userDetails.getUsername());
         return ResponseEntity.ok(appointments);
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteClient(

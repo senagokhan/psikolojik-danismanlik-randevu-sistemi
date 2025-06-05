@@ -8,6 +8,8 @@ import com.psikolojikdanismanlik.randevusistemi.enums.Role;
 import com.psikolojikdanismanlik.randevusistemi.enums.Status;
 import com.psikolojikdanismanlik.randevusistemi.repository.*;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
@@ -22,13 +24,15 @@ public class AppointmentService {
     private final AvailabilityRepository availabilityRepository;
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
+    private final TherapistRepository therapistRepository;
 
-    public AppointmentService(AppointmentRepository appointmentRepository, ClientRepository clientRepository, AvailabilityRepository availabilityRepository, ModelMapper modelMapper, UserRepository userRepository) {
+    public AppointmentService(AppointmentRepository appointmentRepository, ClientRepository clientRepository, AvailabilityRepository availabilityRepository, ModelMapper modelMapper, UserRepository userRepository, TherapistRepository therapistRepository) {
         this.appointmentRepository = appointmentRepository;
         this.clientRepository = clientRepository;
         this.userRepository = userRepository;
         this.availabilityRepository = availabilityRepository;
         this.modelMapper = modelMapper;
+        this.therapistRepository = therapistRepository;
     }
 
     public AppointmentResponseDto createAppointment(AppointmentRequest request, String clientEmail) {
@@ -125,18 +129,46 @@ public class AppointmentService {
         return modelMapper.map(updated, AppointmentResponseDto.class);
     }
 
-    public List<AppointmentResponseDto> getAppointmentsByClientId(Long clientId) {
-        List<Appointment> appointments = appointmentRepository.findByClientId(clientId);
-        return appointments.stream()
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
+    public Page<AppointmentResponseDto> getAppointmentsByClientId(Long clientId, Pageable pageable, String clientEmail) {
+        try {
+            User user = userRepository.findByEmail(clientEmail)
+                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+
+            if (!user.getRole().equals(Role.CLIENT)) {
+                throw new AccessDeniedException("Sadece danışanlar kendi randevularını görebilir.");
+            }
+
+            Client client = clientRepository.findById(clientId)
+                    .orElseThrow(() -> new RuntimeException("Danışan bulunamadı."));
+
+            if (!client.getUser().getEmail().equals(clientEmail)) {
+                throw new AccessDeniedException("Sadece kendi randevularınızı görüntüleyebilirsiniz.");
+            }
+
+            Page<Appointment> page = appointmentRepository.findByClientId(clientId, pageable);
+
+            return page.map(this::mapToDto);
+
+        } catch (AccessDeniedException e) {
+            throw new RuntimeException("Yetkisiz erişim: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Randevular getirilirken hata oluştu: " + e.getMessage());
+        }
     }
 
-    public List<AppointmentResponseDto> getAppointmentsByTherapistId(Long therapistId) {
-        List<Appointment> appointments = appointmentRepository.findByTherapistId(therapistId);
-        return appointments.stream()
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
+
+    public Page<AppointmentResponseDto> getAppointmentsByTherapistEmail(String email, Pageable pageable) {
+        try {
+            Therapist therapist = therapistRepository.findByUserEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Terapist bulunamadı"));
+
+            Page<Appointment> page = appointmentRepository.findByTherapistId(therapist.getId(), pageable);
+
+            return page.map(this::mapToDto);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Terapistin randevuları getirilirken hata oluştu: " + e.getMessage());
+        }
     }
 
     private AppointmentResponseDto mapToDto(Appointment appointment) {
