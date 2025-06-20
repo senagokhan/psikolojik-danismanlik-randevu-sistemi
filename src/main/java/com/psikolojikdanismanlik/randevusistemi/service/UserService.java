@@ -2,6 +2,7 @@ package com.psikolojikdanismanlik.randevusistemi.service;
 
 import com.psikolojikdanismanlik.randevusistemi.dto.request.UserLoginRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.UserRegisterRequest;
+import com.psikolojikdanismanlik.randevusistemi.dto.request.UserRoleUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.UserUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.UserResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.entity.User;
@@ -64,7 +65,6 @@ public class UserService implements UserDetailsService {
             if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
                 throw new RuntimeException("E-posta veya şifre hatalı.");
             }
-
             return modelMapper.map(user, UserResponseDto.class);
 
         } catch (Exception e) {
@@ -74,67 +74,90 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + email));
+        try {
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + email));
 
-        return org.springframework.security.core.userdetails.User
-                .withUsername(user.getEmail())
-                .password(user.getPassword())
-                .roles(user.getRole().name())
-                .build();
+            return org.springframework.security.core.userdetails.User
+                    .withUsername(user.getEmail())
+                    .password(user.getPassword())
+                    .roles(user.getRole().name())
+                    .build();
+        } catch (UsernameNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new UsernameNotFoundException("Kullanıcı yüklenirken beklenmeyen bir hata oluştu: " + e.getMessage());
+        }
     }
 
+
     public UserResponseDto getUserById(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
-        return modelMapper.map(user, UserResponseDto.class);
+        try {
+            User user = userRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
+            return modelMapper.map(user, UserResponseDto.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Kullanıcı getirilirken hata oluştu: " + e.getMessage());
+        }
     }
 
     public UserResponseDto updateCurrentUser(UserUpdateRequest request, String currentEmail) {
-        User user = userRepository.findByEmail(currentEmail)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
+        try {
+            User user = userRepository.findByEmail(currentEmail)
+                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
 
-        user.setFullName(request.getFullName());
-        user.setPhoneNumber(request.getPhoneNumber());
+            user.setFullName(request.getFullName());
+            user.setPhoneNumber(request.getPhoneNumber());
 
-        if (request.getPassword() != null && !request.getPassword().isBlank()) {
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            if (request.getPassword() != null && !request.getPassword().isBlank()) {
+                user.setPassword(passwordEncoder.encode(request.getPassword()));
+            }
+
+            userRepository.save(user);
+            return modelMapper.map(user, UserResponseDto.class);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Profil güncellenirken bir hata oluştu: " + e.getMessage());
         }
-
-        userRepository.save(user);
-        return modelMapper.map(user, UserResponseDto.class);
     }
 
-    public void deleteUser(Long userId, String currentEmail) throws AccessDeniedException {
-        User userToDelete = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
+    public void deleteUser(Long userId, String currentEmail) {
+        try {
+            User userToDelete = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
 
-        User currentUser = userRepository.findByEmail(currentEmail)
-                .orElseThrow(() -> new RuntimeException("Geçerli kullanıcı bulunamadı."));
+            User currentUser = userRepository.findByEmail(currentEmail)
+                    .orElseThrow(() -> new RuntimeException("Geçerli kullanıcı bulunamadı."));
 
-        boolean isOwner = userToDelete.getEmail().equals(currentEmail);
-        boolean isAdmin = currentUser.getRole().name().equals("ADMIN");
+            boolean isOwner = userToDelete.getEmail().equals(currentEmail);
+            boolean isAdmin = currentUser.getRole().name().equals("ADMIN");
 
-        if (!isOwner && !isAdmin) {
-            throw new AccessDeniedException("Bu işlemi yapmaya yetkiniz yok.");
+            if (!isOwner && !isAdmin) {
+                throw new AccessDeniedException("Bu işlemi yapmaya yetkiniz yok.");
+            }
+
+            if (userToDelete.getClient() != null) {
+                clientRepository.deleteById(userToDelete.getClient().getId());
+            }
+
+            if (userToDelete.getTherapist() != null) {
+                therapistRepository.deleteById(userToDelete.getTherapist().getId());
+            }
+
+            userRepository.deleteById(userId);
+        } catch (Exception e) {
+            throw new RuntimeException("Kullanıcı silinirken bir hata oluştu: " + e.getMessage());
         }
-
-        if (userToDelete.getClient() != null) {
-            clientRepository.deleteById(userToDelete.getClient().getId());
-        }
-
-        if (userToDelete.getTherapist() != null) {
-            therapistRepository.deleteById(userToDelete.getTherapist().getId());
-        }
-
-        userRepository.deleteById(userId);
     }
 
     public Page<UserResponseDto> getAllUsers(Pageable pageable) {
-        return userRepository.findAll(pageable)
-                .map(user -> modelMapper.map(user, UserResponseDto.class));
+        try {
+            return userRepository.findAll(pageable)
+                    .map(user -> modelMapper.map(user, UserResponseDto.class));
+        } catch (Exception e) {
+            throw new RuntimeException("Kullanıcılar getirilirken bir hata oluştu: " + e.getMessage());
+        }
     }
-
 
     public boolean isAdmin(String email) {
         User user = userRepository.findByEmail(email)
@@ -143,39 +166,53 @@ public class UserService implements UserDetailsService {
     }
 
     public List<UserResponseDto> getUsersByRole(Role role, String requesterEmail) throws AccessDeniedException {
-        User requester = userRepository.findByEmail(requesterEmail)
-                .orElseThrow(() -> new RuntimeException("İstek yapan kullanıcı bulunamadı."));
+        try {
+            User requester = userRepository.findByEmail(requesterEmail)
+                    .orElseThrow(() -> new RuntimeException("İstek yapan kullanıcı bulunamadı."));
 
-        if (requester.getRole() != Role.ADMIN) {
-            throw new AccessDeniedException("Sadece admin kullanıcılar bu işlemi yapabilir.");
+            if (requester.getRole() != Role.ADMIN) {
+                throw new AccessDeniedException("Sadece admin kullanıcılar bu işlemi yapabilir.");
+            }
+
+            List<User> users = userRepository.findByRole(role);
+            return users.stream()
+                    .map(user -> modelMapper.map(user, UserResponseDto.class))
+                    .collect(Collectors.toList());
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Kullanıcılar role göre getirilirken bir hata oluştu: " + e.getMessage());
         }
-
-        List<User> users = userRepository.findByRole(role);
-        return users.stream()
-                .map(user -> modelMapper.map(user, UserResponseDto.class))
-                .collect(Collectors.toList());
     }
 
-    public UserResponseDto updateUserRole(Long userId, Role newRole, String requesterEmail) throws AccessDeniedException {
-        if (!isAdmin(requesterEmail)) {
-            throw new AccessDeniedException("Sadece adminler rol güncellemesi yapabilir.");
+    public UserResponseDto updateUserRole(Long userId, UserRoleUpdateRequest request, String requesterEmail) {
+        try {
+            if (!isAdmin(requesterEmail)) {
+                throw new AccessDeniedException("Sadece admin rol güncellemesi yapabilir.");
+            }
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+
+            user.setRole(request.getNewRole());
+            userRepository.save(user);
+            return modelMapper.map(user, UserResponseDto.class);
+
+        } catch (AccessDeniedException e) {
+            throw new RuntimeException("Yetkisiz erişim: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Rol güncellenemedi: " + e.getMessage());
         }
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
-
-        user.setRole(newRole);
-        userRepository.save(user);
-
-        return modelMapper.map(user, UserResponseDto.class);
-    }
-
-    public UserResponseDto getUserByEmail(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
-        return modelMapper.map(user, UserResponseDto.class);
     }
 
 
+    public UserResponseDto getCurrentUser(String email) {
+        try {
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+            return modelMapper.map(user, UserResponseDto.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Kullanıcı bilgileri alınırken bir hata oluştu: " + e.getMessage());
+        }
+    }
 }
 

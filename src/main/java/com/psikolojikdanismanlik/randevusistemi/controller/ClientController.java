@@ -15,9 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-
 import java.nio.file.AccessDeniedException;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/clients")
@@ -44,7 +42,6 @@ public class ClientController {
         return ResponseEntity.ok(appointments);
     }
 
-
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteClient(
             @PathVariable Long id,
@@ -63,6 +60,4 @@ public class ClientController {
         Client updated = clientService.updateClient(id, request, userDetails.getUsername());
         return ResponseEntity.ok(updated);
     }
-
-
 }

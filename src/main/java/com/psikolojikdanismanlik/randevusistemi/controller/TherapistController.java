@@ -45,7 +45,6 @@ public class TherapistController {
         return new ResponseEntity<>(therapist, HttpStatus.CREATED);
     }
 
-
     @GetMapping("/my-appointments")
     public ResponseEntity<Page<AppointmentResponseDto>> getAppointmentsByLoggedInTherapist(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -57,7 +56,6 @@ public class TherapistController {
                 .getAppointmentsByTherapistEmail(userDetails.getUsername(), pageable);
         return ResponseEntity.ok(response);
     }
-
 
     @PutMapping("/{id}")
     public ResponseEntity<Therapist> updateTherapist(@PathVariable Long id, @RequestBody TherapistUpdateRequest request, @AuthenticationPrincipal UserDetails userDetails
@@ -84,5 +82,4 @@ public class TherapistController {
         List<ClientResponseDto> clients = therapistService.getClientsOfTherapist(userDetails.getUsername());
         return ResponseEntity.ok(clients);
     }
-
 }

@@ -1,5 +1,6 @@
 package com.psikolojikdanismanlik.randevusistemi.controller;
 
+import com.psikolojikdanismanlik.randevusistemi.dto.request.UserRoleUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.UserUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.UserResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.enums.Role;
@@ -25,14 +26,24 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDto> getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserResponseDto> getUserById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) throws AccessDeniedException {
+        if (!userService.isAdmin(userDetails.getUsername())) {
+            throw new AccessDeniedException("Yalnızca admin kullanıcılar erişebilir.");
+        }
+
         UserResponseDto response = userService.getUserById(id);
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<UserResponseDto> updateProfile(@RequestBody UserUpdateRequest request) {
-        UserResponseDto response = userService.updateCurrentUser(request, request.getEmail());
+    public ResponseEntity<UserResponseDto> updateProfile(
+            @RequestBody UserUpdateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        UserResponseDto response = userService.updateCurrentUser(request, userDetails.getUsername());
         return ResponseEntity.ok(response);
     }
 
@@ -40,7 +51,7 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails
-    ) throws AccessDeniedException {
+    ) {
         userService.deleteUser(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
@@ -53,7 +64,6 @@ public class UserController {
         if (!userService.isAdmin(userDetails.getUsername())) {
             throw new AccessDeniedException("Yetkisiz erişim.");
         }
-
         Page<UserResponseDto> users = userService.getAllUsers(pageable);
         return ResponseEntity.ok(users);
     }
@@ -67,13 +77,13 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
-    @PutMapping("/admin/{userId}/role")
+    @PutMapping("/{userId}/role")
     public ResponseEntity<UserResponseDto> updateUserRole(
             @PathVariable Long userId,
-            @RequestParam Role newRole,
+            @RequestBody UserRoleUpdateRequest request,
             @AuthenticationPrincipal UserDetails userDetails
-    ) throws AccessDeniedException {
-        UserResponseDto updatedUser = userService.updateUserRole(userId, newRole, userDetails.getUsername());
+    ) {
+        UserResponseDto updatedUser = userService.updateUserRole(userId, request, userDetails.getUsername());
         return ResponseEntity.ok(updatedUser);
     }
 
@@ -81,7 +91,7 @@ public class UserController {
     public ResponseEntity<UserResponseDto> getCurrentUser(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        UserResponseDto userDto = userService.getUserByEmail(userDetails.getUsername());
+        UserResponseDto userDto = userService.getCurrentUser(userDetails.getUsername());
         return ResponseEntity.ok(userDto);
     }
 }
