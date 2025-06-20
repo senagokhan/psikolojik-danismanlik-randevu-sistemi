@@ -90,7 +90,6 @@ public class UserService implements UserDetailsService {
         }
     }
 
-
     public UserResponseDto getUserById(Long id) {
         try {
             User user = userRepository.findById(id)
@@ -203,7 +202,6 @@ public class UserService implements UserDetailsService {
             throw new RuntimeException("Rol güncellenemedi: " + e.getMessage());
         }
     }
-
 
     public UserResponseDto getCurrentUser(String email) {
         try {

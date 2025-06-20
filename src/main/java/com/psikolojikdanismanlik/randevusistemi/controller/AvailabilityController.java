@@ -2,8 +2,10 @@ package com.psikolojikdanismanlik.randevusistemi.controller;
 
 import com.psikolojikdanismanlik.randevusistemi.dto.request.AvailabilityRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.AvailabilityResponseDto;
+import com.psikolojikdanismanlik.randevusistemi.entity.Availability;
 import com.psikolojikdanismanlik.randevusistemi.service.AvailabilityService;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,6 +23,17 @@ public class AvailabilityController {
     public AvailabilityController(AvailabilityService availabilityService) {
         this.availabilityService = availabilityService;
     }
+
+    @PostMapping
+    public ResponseEntity<Availability> addAvailability(
+            @PathVariable Long therapistId,
+            @RequestBody AvailabilityRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) throws AccessDeniedException {
+        Availability availability = availabilityService.addAvailability(therapistId, request, userDetails.getUsername());
+        return new ResponseEntity<>(availability, HttpStatus.CREATED);
+    }
+
 
     @DeleteMapping("/{availabilityId}")
     public ResponseEntity<Void> deleteAvailability(

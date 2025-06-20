@@ -13,8 +13,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class AppointmentService {
@@ -24,15 +22,13 @@ public class AppointmentService {
     private final AvailabilityRepository availabilityRepository;
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
-    private final TherapistRepository therapistRepository;
 
-    public AppointmentService(AppointmentRepository appointmentRepository, ClientRepository clientRepository, AvailabilityRepository availabilityRepository, ModelMapper modelMapper, UserRepository userRepository, TherapistRepository therapistRepository) {
+    public AppointmentService(AppointmentRepository appointmentRepository, ClientRepository clientRepository, AvailabilityRepository availabilityRepository, ModelMapper modelMapper, UserRepository userRepository) {
         this.appointmentRepository = appointmentRepository;
         this.clientRepository = clientRepository;
         this.userRepository = userRepository;
         this.availabilityRepository = availabilityRepository;
         this.modelMapper = modelMapper;
-        this.therapistRepository = therapistRepository;
     }
 
     public AppointmentResponseDto createAppointment(AppointmentRequest request, String clientEmail) {
@@ -153,21 +149,6 @@ public class AppointmentService {
             throw new RuntimeException("Yetkisiz erişim: " + e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException("Randevular getirilirken hata oluştu: " + e.getMessage());
-        }
-    }
-
-
-    public Page<AppointmentResponseDto> getAppointmentsByTherapistEmail(String email, Pageable pageable) {
-        try {
-            Therapist therapist = therapistRepository.findByUserEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Terapist bulunamadı"));
-
-            Page<Appointment> page = appointmentRepository.findByTherapistId(therapist.getId(), pageable);
-
-            return page.map(this::mapToDto);
-
-        } catch (Exception e) {
-            throw new RuntimeException("Terapistin randevuları getirilirken hata oluştu: " + e.getMessage());
         }
     }
 
