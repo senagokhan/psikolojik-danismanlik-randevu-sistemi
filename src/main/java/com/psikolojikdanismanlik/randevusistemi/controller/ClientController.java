@@ -2,14 +2,8 @@ package com.psikolojikdanismanlik.randevusistemi.controller;
 
 import com.psikolojikdanismanlik.randevusistemi.dto.request.ClientRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.ClientUpdateRequest;
-import com.psikolojikdanismanlik.randevusistemi.dto.response.AppointmentResponseDto;
-import com.psikolojikdanismanlik.randevusistemi.entity.Client;
-import com.psikolojikdanismanlik.randevusistemi.service.AppointmentService;
+import com.psikolojikdanismanlik.randevusistemi.dto.response.ClientResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.service.ClientService;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,25 +15,18 @@ import java.nio.file.AccessDeniedException;
 @RequestMapping("/api/clients")
 public class ClientController {
     private final ClientService clientService;
-    private final AppointmentService appointmentService;
-    public ClientController(ClientService clientService, AppointmentService appointmentService) {
+
+    public ClientController(ClientService clientService) {
         this.clientService = clientService;
-        this.appointmentService = appointmentService;
-    }
-    @PostMapping
-    public ResponseEntity<Client> createClient(@RequestBody ClientRequest request) {
-        Client client = clientService.createClient(request);
-        return new ResponseEntity<>(client, HttpStatus.CREATED);
     }
 
-    @GetMapping("/{id}/appointments")
-    public ResponseEntity<Page<AppointmentResponseDto>> getAppointmentsByClientId(
-            @PathVariable Long id,
-            @PageableDefault(size = 5, sort = "createdDate", direction = Sort.Direction.DESC) Pageable pageable,
+    @PostMapping
+    public ResponseEntity<ClientResponseDto> createClient(
+            @RequestBody ClientRequest request,
             @AuthenticationPrincipal UserDetails userDetails
-    ) {
-        Page<AppointmentResponseDto> appointments = appointmentService.getAppointmentsByClientId(id, pageable, userDetails.getUsername());
-        return ResponseEntity.ok(appointments);
+    ) throws AccessDeniedException {
+        ClientResponseDto response = clientService.createClient(request, userDetails.getUsername());
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{id}")
@@ -52,12 +39,13 @@ public class ClientController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Client> updateClient(
+    public ResponseEntity<ClientResponseDto> updateClient(
             @PathVariable Long id,
             @RequestBody ClientUpdateRequest request,
             @AuthenticationPrincipal UserDetails userDetails
     ) throws AccessDeniedException {
-        Client updated = clientService.updateClient(id, request, userDetails.getUsername());
-        return ResponseEntity.ok(updated);
+        ClientResponseDto updatedClient = clientService.updateClient(id, request, userDetails.getUsername());
+        return ResponseEntity.ok(updatedClient);
     }
+
 }

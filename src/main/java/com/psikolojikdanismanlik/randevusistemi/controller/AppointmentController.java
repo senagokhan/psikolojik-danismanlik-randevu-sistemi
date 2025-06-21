@@ -5,6 +5,10 @@ import com.psikolojikdanismanlik.randevusistemi.dto.request.AppointmentStatusUpd
 import com.psikolojikdanismanlik.randevusistemi.dto.request.RescheduleRequestDto;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.AppointmentResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.service.AppointmentService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -74,5 +78,14 @@ public class AppointmentController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/{id}/appointments")
+    public ResponseEntity<Page<AppointmentResponseDto>> getAppointmentsByClientId(
+            @PathVariable Long id,
+            @PageableDefault(size = 5, sort = "createdDate", direction = Sort.Direction.DESC) Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        Page<AppointmentResponseDto> appointments = appointmentService.getAppointmentsByClientId(id, pageable, userDetails.getUsername());
+        return ResponseEntity.ok(appointments);
+    }
 
 }
