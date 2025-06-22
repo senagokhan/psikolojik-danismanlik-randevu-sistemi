@@ -4,6 +4,8 @@ import com.psikolojikdanismanlik.randevusistemi.dto.request.UserLoginRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.UserRegisterRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.AuthResponse;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.UserResponseDto;
+import com.psikolojikdanismanlik.randevusistemi.entity.User;
+import com.psikolojikdanismanlik.randevusistemi.repository.UserRepository;
 import com.psikolojikdanismanlik.randevusistemi.util.JwtUtil;
 import com.psikolojikdanismanlik.randevusistemi.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -39,17 +42,25 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
+    public ResponseEntity<AuthResponse> login(@RequestBody UserLoginRequest request) {
+        authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
                         request.getPassword()
                 )
         );
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
 
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        String token = jwtUtil.generateToken(userDetails);
+        String token = jwtUtil.generateToken(user);
+        AuthResponse authResponse = new AuthResponse(
+                token,
+                user.getId(),
+                user.getRole().name()
+        );
 
-        return ResponseEntity.ok(new AuthResponse(token));
+        return ResponseEntity.ok(authResponse);
     }
+
+
 }

@@ -9,6 +9,8 @@ import com.psikolojikdanismanlik.randevusistemi.enums.Role;
 import com.psikolojikdanismanlik.randevusistemi.repository.AvailabilityRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.TherapistRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
@@ -28,71 +30,116 @@ public class AvailabilityService {
     }
 
     public Availability addAvailability(Long therapistId, AvailabilityRequest request, String requesterEmail) throws AccessDeniedException {
-        User user = userRepository.findByEmail(requesterEmail)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
+        try {
+            User user = userRepository.findByEmail(requesterEmail)
+                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
 
-        if (user.getRole() != Role.ADMIN && user.getRole() != Role.THERAPIST) {
-            throw new AccessDeniedException("Sadece terapist ya da admin müsaitlik ekleyebilir.");
+            if (user.getRole() != Role.ADMIN && user.getRole() != Role.THERAPIST) {
+                throw new AccessDeniedException("Sadece terapist ya da admin müsaitlik ekleyebilir.");
+            }
+
+            Therapist therapist = therapistRepository.findById(therapistId)
+                    .orElseThrow(() -> new RuntimeException("Terapist bulunamadı."));
+
+            Availability availability = new Availability();
+            availability.setTherapist(therapist);
+            availability.setStartTime(request.getStartTime());
+            availability.setEndTime(request.getEndTime());
+
+            return availabilityRepository.save(availability);
+
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Müsaitlik eklenirken hata oluştu: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
         }
-
-        Therapist therapist = therapistRepository.findById(therapistId)
-                .orElseThrow(() -> new RuntimeException("Terapist bulunamadı."));
-
-        Availability availability = new Availability();
-        availability.setTherapist(therapist);
-        availability.setStartTime(request.getStartTime());
-        availability.setEndTime(request.getEndTime());
-
-        return availabilityRepository.save(availability);
     }
 
+
     public void deleteAvailability(Long therapistId, Long availabilityId, String therapistEmail) throws AccessDeniedException {
-        Therapist therapist = therapistRepository.findById(therapistId)
-                .orElseThrow(() -> new RuntimeException("Terapist bulunamadı"));
+        try {
+            Therapist therapist = therapistRepository.findById(therapistId)
+                    .orElseThrow(() -> new RuntimeException("Terapist bulunamadı"));
 
-        String emailFromDb = therapist.getUser().getEmail();
+            String emailFromDb = therapist.getUser().getEmail();
 
-        if (!emailFromDb.equals(therapistEmail)) {
-            throw new AccessDeniedException("Bu müsaitliği silmeye yetkiniz yok.");
+            if (!emailFromDb.equals(therapistEmail)) {
+                throw new AccessDeniedException("Bu müsaitliği silmeye yetkiniz yok.");
+            }
+
+            Availability availability = availabilityRepository.findById(availabilityId)
+                    .orElseThrow(() -> new RuntimeException("Müsaitlik bulunamadı"));
+
+            if (!availability.getTherapist().getId().equals(therapistId)) {
+                throw new AccessDeniedException("Bu müsaitliği silmeye yetkiniz yok.");
+            }
+
+            availabilityRepository.delete(availability);
+
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Müsaitlik silinirken hata oluştu: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
         }
-
-        Availability availability = availabilityRepository.findById(availabilityId)
-                .orElseThrow(() -> new RuntimeException("Müsaitlik bulunamadı"));
-
-        if (!availability.getTherapist().getId().equals(therapistId)) {
-            throw new AccessDeniedException("Bu müsaitliği silmeye yetkiniz yok.");
-        }
-
-        availabilityRepository.delete(availability);
     }
 
     public AvailabilityResponseDto updateAvailability(Long therapistId, Long availabilityId, AvailabilityRequest request) throws AccessDeniedException {
-        Therapist therapist = therapistRepository.findById(therapistId)
-                .orElseThrow(() -> new RuntimeException("Terapist bulunamadı"));
+        try {
+            Therapist therapist = therapistRepository.findById(therapistId).orElseThrow(() -> new RuntimeException("Terapist bulunamadı"));
+            Availability availability = availabilityRepository.findById(availabilityId).orElseThrow(() -> new RuntimeException("Müsaitlik bulunamadı"));
+            if (!availability.getTherapist().getId().equals(therapist.getId())) {
+                throw new AccessDeniedException("Bu terapiste ait olmayan bir müsaitlik güncellenemez.");
+            }
+            availability.setStartTime(request.getStartTime());
+            availability.setEndTime(request.getEndTime());
 
-        Availability availability = availabilityRepository.findById(availabilityId)
-                .orElseThrow(() -> new RuntimeException("Müsaitlik bulunamadı"));
+            Availability updated = availabilityRepository.save(availability);
 
-        if (!availability.getTherapist().getId().equals(therapist.getId())) {
-            throw new AccessDeniedException("Bu terapiste ait olmayan bir müsaitlik güncellenemez.");
+            AvailabilityResponseDto response = new AvailabilityResponseDto();
+            response.setId(updated.getId());
+            response.setStartTime(updated.getStartTime());
+            response.setEndTime(updated.getEndTime());
+            response.setTherapistId(therapist.getId());
+
+            return response;
+
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Müsaitlik güncellenirken hata oluştu: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
         }
-
-        availability.setStartTime(request.getStartTime());
-        availability.setEndTime(request.getEndTime());
-
-        Availability updated = availabilityRepository.save(availability);
-
-        AvailabilityResponseDto response = new AvailabilityResponseDto();
-        response.setId(updated.getId());
-        response.setStartTime(updated.getStartTime());
-        response.setEndTime(updated.getEndTime());
-        response.setTherapistId(therapist.getId());
-
-        return response;
     }
 
     public boolean isTherapistAvailableOn(Long therapistId, LocalDateTime desiredTime) {
-        return availabilityRepository.existsByTherapistIdAndStartTime(therapistId, desiredTime);
+        try {
+            return availabilityRepository.existsByTherapistIdAndStartTime(therapistId, desiredTime);
+        } catch (Exception e) {
+            System.err.println("Terapist uygunluğu kontrol edilirken hata oluştu: " + e.getMessage());
+            return false;
+        }
     }
 
+    public Page<AvailabilityResponseDto> getAvailabilitiesForTherapist(Long therapistId, Pageable pageable) {
+        try {
+            Page<Availability> availabilities = availabilityRepository
+                    .findByTherapistIdOrderByStartTimeAsc(therapistId, pageable);
+
+            return availabilities.map(av -> {
+                AvailabilityResponseDto dto = new AvailabilityResponseDto();
+                dto.setId(av.getId());
+                dto.setStartTime(av.getStartTime());
+                dto.setEndTime(av.getEndTime());
+                dto.setTherapistId(av.getTherapist().getId());
+                return dto;
+            });
+        } catch (Exception e) {
+            throw new RuntimeException("Terapistin müsaitlikleri alınırken hata oluştu: " + e.getMessage());
+        }
+    }
 }

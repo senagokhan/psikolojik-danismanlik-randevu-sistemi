@@ -32,19 +32,12 @@ public class AppointmentService {
     }
 
     public AppointmentResponseDto createAppointment(AppointmentRequest request, String clientEmail) {
-        User user = userRepository.findByEmail(clientEmail)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
-
+        User user = userRepository.findByEmail(clientEmail).orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
         if (user.getRole() != Role.CLIENT) {
             throw new RuntimeException("Sadece danışanlar randevu alabilir.");
         }
-
-        Client client = clientRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Danışan bulunamadı"));
-
-        Availability availability = availabilityRepository.findById(request.getAvailabilityId())
-                .orElseThrow(() -> new RuntimeException("Uygunluk bilgisi bulunamadı"));
-
+        Client client = clientRepository.findByUserId(user.getId()).orElseThrow(() -> new RuntimeException("Danışan bulunamadı"));
+        Availability availability = availabilityRepository.findById(request.getAvailabilityId()).orElseThrow(() -> new RuntimeException("Uygunluk bilgisi bulunamadı"));
         if (availability.isBooked()) {
             throw new RuntimeException("Bu saat zaten rezerve edilmiş.");
         }
@@ -55,13 +48,10 @@ public class AppointmentService {
         appointment.setAvailability(availability);
         appointment.setStatus(Status.PENDING);
         appointment.setCreatedAt(LocalDateTime.now());
-
         appointment.setStartTime(availability.getStartTime());
         appointment.setEndTime(availability.getEndTime());
-
         availability.setBooked(true);
         availabilityRepository.save(availability);
-
         appointmentRepository.save(appointment);
 
         return modelMapper.map(appointment, AppointmentResponseDto.class);
