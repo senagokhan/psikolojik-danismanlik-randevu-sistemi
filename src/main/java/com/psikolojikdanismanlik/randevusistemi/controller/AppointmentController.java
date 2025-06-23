@@ -43,7 +43,7 @@ public class AppointmentController {
     ) throws AccessDeniedException {
         String therapistEmail = userDetails.getUsername();
 
-        AppointmentResponseDto response = appointmentService.updateStatusAsTherapist(id, request.getStatus(), therapistEmail);
+        AppointmentResponseDto response = appointmentService.updateStatus(id, request.getStatus(), therapistEmail);
         return ResponseEntity.ok(response);
     }
 
@@ -59,7 +59,7 @@ public class AppointmentController {
     }
 
     @PutMapping("/{id}/reschedule")
-    public ResponseEntity<AppointmentResponseDto> requestReschedule(
+    public ResponseEntity<AppointmentResponseDto> requestRescheduleByClient(
             @PathVariable Long id,
             @RequestBody RescheduleRequestDto request,
             @AuthenticationPrincipal UserDetails userDetails
@@ -70,15 +70,15 @@ public class AppointmentController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAppointmentAsTherapist(
+    public ResponseEntity<Void> deleteAppointment(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails
     ) throws AccessDeniedException {
-        appointmentService.deleteAppointmentAsTherapist(id, userDetails.getUsername());
+        appointmentService.deleteAppointment(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/{id}/appointments")
+    @GetMapping("/{id}")
     public ResponseEntity<Page<AppointmentResponseDto>> getAppointmentsByClientId(
             @PathVariable Long id,
             @PageableDefault(size = 5, sort = "createdDate", direction = Sort.Direction.DESC) Pageable pageable,
@@ -87,5 +87,4 @@ public class AppointmentController {
         Page<AppointmentResponseDto> appointments = appointmentService.getAppointmentsByClientId(id, pageable, userDetails.getUsername());
         return ResponseEntity.ok(appointments);
     }
-
 }

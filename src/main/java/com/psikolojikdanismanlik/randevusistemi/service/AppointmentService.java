@@ -32,88 +32,121 @@ public class AppointmentService {
     }
 
     public AppointmentResponseDto createAppointment(AppointmentRequest request, String clientEmail) {
-        User user = userRepository.findByEmail(clientEmail).orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
-        if (user.getRole() != Role.CLIENT) {
-            throw new RuntimeException("Sadece danışanlar randevu alabilir.");
+        try {
+            User user = userRepository.findByEmail(clientEmail).orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+            if (user.getRole() != Role.CLIENT) {
+                throw new RuntimeException("Sadece danışanlar randevu alabilir.");
+            }
+            Client client = clientRepository.findByUserId(user.getId()).orElseThrow(() -> new RuntimeException("Danışan bulunamadı"));
+            Availability availability = availabilityRepository.findById(request.getAvailabilityId()).orElseThrow(() -> new RuntimeException("Uygunluk bilgisi bulunamadı"));
+            if (availability.isBooked()) {
+                throw new RuntimeException("Bu saat zaten rezerve edilmiş.");
+            }
+            Appointment appointment = new Appointment();
+            appointment.setClient(client);
+            appointment.setTherapist(availability.getTherapist());
+            appointment.setAvailability(availability);
+            appointment.setStatus(Status.PENDING);
+            appointment.setCreatedAt(LocalDateTime.now());
+            appointment.setStartTime(availability.getStartTime());
+            appointment.setEndTime(availability.getEndTime());
+            availability.setBooked(true);
+            availabilityRepository.save(availability);
+            appointmentRepository.save(appointment);
+            return modelMapper.map(appointment, AppointmentResponseDto.class);
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Randevu oluşturulurken hata oluştu: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
         }
-        Client client = clientRepository.findByUserId(user.getId()).orElseThrow(() -> new RuntimeException("Danışan bulunamadı"));
-        Availability availability = availabilityRepository.findById(request.getAvailabilityId()).orElseThrow(() -> new RuntimeException("Uygunluk bilgisi bulunamadı"));
-        if (availability.isBooked()) {
-            throw new RuntimeException("Bu saat zaten rezerve edilmiş.");
-        }
-
-        Appointment appointment = new Appointment();
-        appointment.setClient(client);
-        appointment.setTherapist(availability.getTherapist());
-        appointment.setAvailability(availability);
-        appointment.setStatus(Status.PENDING);
-        appointment.setCreatedAt(LocalDateTime.now());
-        appointment.setStartTime(availability.getStartTime());
-        appointment.setEndTime(availability.getEndTime());
-        availability.setBooked(true);
-        availabilityRepository.save(availability);
-        appointmentRepository.save(appointment);
-
-        return modelMapper.map(appointment, AppointmentResponseDto.class);
     }
 
-    public AppointmentResponseDto updateStatusAsTherapist(Long id, Status status, String therapistEmail) throws AccessDeniedException {
-        Appointment appointment = appointmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Randevu bulunamadı"));
 
-        String therapistEmailFromDb = appointment.getTherapist().getUser().getEmail();
+    public AppointmentResponseDto updateStatus(Long id, Status status, String requesterEmail) throws AccessDeniedException {
+        try {
+            Appointment appointment = appointmentRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Randevu bulunamadı"));
 
-        if (!therapistEmail.equals(therapistEmailFromDb)) {
-            throw new AccessDeniedException("Bu randevuyu güncellemeye yetkiniz yok.");
+            String therapistEmailFromDb = appointment.getTherapist().getUser().getEmail();
+
+            User requester = userRepository.findByEmail(requesterEmail)
+                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+
+            boolean isTherapistOwner = therapistEmailFromDb.equals(requesterEmail);
+            boolean isAdmin = requester.getRole() == Role.ADMIN;
+
+            if (!isTherapistOwner && !isAdmin) {
+                throw new AccessDeniedException("Bu randevuyu güncellemeye yetkiniz yok.");
+            }
+            appointment.setStatus(status);
+            Appointment updated = appointmentRepository.save(appointment);
+            return modelMapper.map(updated, AppointmentResponseDto.class);
+
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Randevu durumu güncellenirken hata oluştu: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
         }
-
-        appointment.setStatus(status);
-        Appointment updated = appointmentRepository.save(appointment);
-        return modelMapper.map(updated, AppointmentResponseDto.class);
     }
+
 
     public AppointmentResponseDto requestCancelByClient(Long appointmentId, Status status, String clientEmail) throws AccessDeniedException {
-        Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Randevu bulunamadı"));
+        try {
+            Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new RuntimeException("Randevu bulunamadı"));
 
-        String emailFromDb = appointment.getClient().getUser().getEmail();
+            String emailFromDb = appointment.getClient().getUser().getEmail();
 
-        if (!emailFromDb.equals(clientEmail)) {
-            throw new AccessDeniedException("Bu randevuya ait iptal isteğinde bulunamazsınız.");
+            if (!emailFromDb.equals(clientEmail)) {
+                throw new AccessDeniedException("Bu randevuya ait iptal isteğinde bulunamazsınız.");
+            }
+            if (!status.equals(Status.CANCEL_REQUESTED_BY_CLIENT)) {
+                throw new AccessDeniedException("Sadece iptal talebinde bulunabilirsiniz.");
+            }
+            appointment.setStatus(status);
+            Appointment updated = appointmentRepository.save(appointment);
+            return modelMapper.map(updated, AppointmentResponseDto.class);
+
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new RuntimeException("İptal talebi sırasında hata oluştu: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
         }
-
-        if (!status.equals(Status.CANCEL_REQUESTED_BY_CLIENT)) {
-            throw new AccessDeniedException("Sadece iptal talebinde bulunabilirsiniz.");
-        }
-
-        appointment.setStatus(status);
-        Appointment updated = appointmentRepository.save(appointment);
-        return modelMapper.map(updated, AppointmentResponseDto.class);
     }
+
 
     public AppointmentResponseDto requestRescheduleByClient(Long appointmentId, RescheduleRequestDto request, String clientEmail) throws AccessDeniedException {
-        Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Randevu bulunamadı"));
+        try {
+            Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new RuntimeException("Randevu bulunamadı"));
 
-        String emailFromDb = appointment.getClient().getUser().getEmail();
+            String emailFromDb = appointment.getClient().getUser().getEmail();
 
-        if (!emailFromDb.equals(clientEmail)) {
-            throw new AccessDeniedException("Bu randevuyu yeniden planlama yetkiniz yok.");
+            if (!emailFromDb.equals(clientEmail)) {
+                throw new AccessDeniedException("Bu randevuyu yeniden planlama yetkiniz yok.");
+            }
+            boolean isAvailable = availabilityRepository.existsByTherapistAndStartTime(
+                    appointment.getTherapist(), request.getNewTime()
+            );
+            if (!isAvailable) {
+                throw new RuntimeException("Yeni istenilen saat terapist için uygun değil.");
+            }
+
+            appointment.setStatus(Status.RESCHEDULE_REQUESTED_BY_CLIENT);
+            appointment.setRequestedRescheduleTime(request.getNewTime());
+            Appointment updated = appointmentRepository.save(appointment);
+            return modelMapper.map(updated, AppointmentResponseDto.class);
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Randevu yeniden planlama isteği sırasında hata oluştu: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
         }
-
-        boolean isAvailable = availabilityRepository.existsByTherapistAndStartTime(
-                appointment.getTherapist(), request.getNewTime()
-        );
-        if (!isAvailable) {
-            throw new RuntimeException("Yeni istenilen saat terapist için uygun değil.");
-        }
-
-        appointment.setStatus(Status.RESCHEDULE_REQUESTED_BY_CLIENT);
-        appointment.setRequestedRescheduleTime(request.getNewTime());
-
-        Appointment updated = appointmentRepository.save(appointment);
-        return modelMapper.map(updated, AppointmentResponseDto.class);
     }
+
 
     public Page<AppointmentResponseDto> getAppointmentsByClientId(Long clientId, Pageable pageable, String clientEmail) {
         try {
@@ -153,25 +186,34 @@ public class AppointmentService {
         return dto;
     }
 
-    public void deleteAppointmentAsTherapist(Long appointmentId, String therapistEmail) throws AccessDeniedException {
-        Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Randevu bulunamadı."));
+    public void deleteAppointment(Long appointmentId, String requesterEmail) throws AccessDeniedException {
+        try {
+            Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new RuntimeException("Randevu bulunamadı."));
+            if (appointment.getStatus() != Status.PENDING) {
+                throw new RuntimeException("Sadece bekleyen randevular silinebilir.");
+            }
+            String therapistEmailFromDb = appointment.getTherapist().getUser().getEmail();
+            User requester = userRepository.findByEmail(requesterEmail).orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
+            boolean isTherapistOwner = therapistEmailFromDb.equals(requesterEmail);
+            boolean isAdmin = requester.getRole() == Role.ADMIN;
+            if (!isTherapistOwner && !isAdmin) {
+                throw new AccessDeniedException("Bu randevuyu silme yetkiniz yok.");
+            }
 
-        if (appointment.getStatus() != Status.PENDING) {
-            throw new RuntimeException("Sadece bekleyen randevular silinebilir.");
+            Availability availability = appointment.getAvailability();
+            if (availability != null) {
+                availability.setBooked(false);
+                availabilityRepository.save(availability);
+            }
+            appointmentRepository.delete(appointment);
+
+        } catch (AccessDeniedException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Randevu silinirken hata oluştu: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
         }
-
-        String therapistEmailFromDb = appointment.getTherapist().getUser().getEmail();
-
-        if (!therapistEmailFromDb.equals(therapistEmail)) {
-            throw new AccessDeniedException("Bu randevuyu silme yetkiniz yok.");
-        }
-
-        Availability availability = appointment.getAvailability();
-        if (availability != null) {
-            availability.setBooked(false);
-            availabilityRepository.save(availability);
-        }
-        appointmentRepository.delete(appointment);
     }
+
 }
