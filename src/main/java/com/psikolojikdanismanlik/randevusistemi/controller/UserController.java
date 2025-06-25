@@ -1,7 +1,9 @@
 package com.psikolojikdanismanlik.randevusistemi.controller;
 
+import com.psikolojikdanismanlik.randevusistemi.dto.request.UserProfileUpdateRequestDto;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.UserRoleUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.UserUpdateRequest;
+import com.psikolojikdanismanlik.randevusistemi.dto.response.UserProfileResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.UserResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.enums.Role;
 import com.psikolojikdanismanlik.randevusistemi.service.UserService;
@@ -39,12 +41,11 @@ public class UserController {
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<UserResponseDto> updateProfile(
-            @RequestBody UserUpdateRequest request,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
-        UserResponseDto response = userService.updateCurrentUser(request, userDetails.getUsername());
-        return ResponseEntity.ok(response);
+    public ResponseEntity<UserProfileResponseDto> updateProfile(
+            @RequestBody UserProfileUpdateRequestDto request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        return ResponseEntity.ok(userService.updateCurrentUser(request, userDetails.getUsername()));
     }
 
     @DeleteMapping("/{id}")
@@ -88,10 +89,7 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserResponseDto> getCurrentUser(
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        UserResponseDto userDto = userService.getCurrentUser(userDetails.getUsername());
-        return ResponseEntity.ok(userDto);
+    public ResponseEntity<UserProfileResponseDto> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(userService.getCurrentUser(userDetails.getUsername()));
     }
 }

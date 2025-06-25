@@ -15,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.nio.file.AccessDeniedException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/appointments")
@@ -42,7 +43,6 @@ public class AppointmentController {
             @AuthenticationPrincipal UserDetails userDetails
     ) throws AccessDeniedException {
         String therapistEmail = userDetails.getUsername();
-
         AppointmentResponseDto response = appointmentService.updateStatus(id, request.getStatus(), therapistEmail);
         return ResponseEntity.ok(response);
     }
@@ -86,5 +86,17 @@ public class AppointmentController {
     ) {
         Page<AppointmentResponseDto> appointments = appointmentService.getAppointmentsByClientId(id, pageable, userDetails.getUsername());
         return ResponseEntity.ok(appointments);
+    }
+
+    @GetMapping("/clients/{clientId}/future")
+    public ResponseEntity<List<AppointmentResponseDto>> getFutureAppointmentsByClientId(@PathVariable Long clientId) {
+        List<AppointmentResponseDto> response = appointmentService.getFutureAppointmentsByClientId(clientId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/clients/{clientId}/past")
+    public ResponseEntity<List<AppointmentResponseDto>> getPastAppointmentsByClientId(@PathVariable Long clientId) {
+        List<AppointmentResponseDto> response = appointmentService.getPastAppointmentsByClientId(clientId);
+        return ResponseEntity.ok(response);
     }
 }

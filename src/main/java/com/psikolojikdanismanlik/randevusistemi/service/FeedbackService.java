@@ -155,4 +155,6 @@ public class FeedbackService {
             throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
         }
     }
+
+
 }

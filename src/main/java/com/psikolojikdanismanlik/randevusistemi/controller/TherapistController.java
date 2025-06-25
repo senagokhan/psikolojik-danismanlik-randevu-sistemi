@@ -83,4 +83,17 @@ public class TherapistController {
         List<ClientResponseDto> clients = therapistService.getClientsOfTherapist(userDetails.getUsername());
         return ResponseEntity.ok(clients);
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<TherapistResponseDto> getTherapistById(@PathVariable Long id) {
+        TherapistResponseDto dto = therapistService.getTherapistById(id);
+        return ResponseEntity.ok(dto);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<TherapistResponseDto> getLoggedInTherapist(@AuthenticationPrincipal UserDetails userDetails) {
+        TherapistResponseDto dto = therapistService.getTherapistByEmail(userDetails.getUsername());
+        return ResponseEntity.ok(dto);
+    }
+
 }

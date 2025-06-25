@@ -48,4 +48,10 @@ public class ClientController {
         return ResponseEntity.ok(updatedClient);
     }
 
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ClientResponseDto> getClientByUserId(@PathVariable Long userId) {
+        return ResponseEntity.ok(clientService.getClientByUserId(userId));
+    }
+
+
 }

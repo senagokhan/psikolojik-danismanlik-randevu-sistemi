@@ -3,6 +3,7 @@ package com.psikolojikdanismanlik.randevusistemi.controller;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.UserLoginRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.UserRegisterRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.AuthResponse;
+import com.psikolojikdanismanlik.randevusistemi.dto.response.LoginResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.UserResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.entity.User;
 import com.psikolojikdanismanlik.randevusistemi.repository.UserRepository;
@@ -42,24 +43,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody UserLoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
-        );
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
-
-        String token = jwtUtil.generateToken(user);
-        AuthResponse authResponse = new AuthResponse(
-                token,
-                user.getId(),
-                user.getRole().name()
-        );
-
-        return ResponseEntity.ok(authResponse);
+    public ResponseEntity<LoginResponseDto> login(@RequestBody UserLoginRequest request) {
+        LoginResponseDto response = userService.login(request);
+        return ResponseEntity.ok(response);
     }
 
 

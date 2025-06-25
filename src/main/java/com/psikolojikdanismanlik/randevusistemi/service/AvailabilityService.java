@@ -136,6 +136,7 @@ public class AvailabilityService {
                 dto.setStartTime(av.getStartTime());
                 dto.setEndTime(av.getEndTime());
                 dto.setTherapistId(av.getTherapist().getId());
+                dto.setBooked(av.isBooked());
                 return dto;
             });
         } catch (Exception e) {

@@ -1,14 +1,18 @@
 package com.psikolojikdanismanlik.randevusistemi.config;
 
+import com.psikolojikdanismanlik.randevusistemi.entity.Client;
 import com.psikolojikdanismanlik.randevusistemi.filter.JwtAuthenticationFilter;
 import com.psikolojikdanismanlik.randevusistemi.repository.ClientRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.TherapistRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.UserRepository;
+import com.psikolojikdanismanlik.randevusistemi.service.ClientService;
+import com.psikolojikdanismanlik.randevusistemi.service.TherapistService;
 import com.psikolojikdanismanlik.randevusistemi.service.UserService;
 import com.psikolojikdanismanlik.randevusistemi.util.JwtUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
@@ -38,8 +42,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public UserDetailsService userDetailsService(UserRepository userRepository, ClientRepository clientRepository, TherapistRepository therapistRepository, ModelMapper modelMapper, PasswordEncoder passwordEncoder) {
-        return new UserService(userRepository, clientRepository, therapistRepository, modelMapper, passwordEncoder);
+    public UserDetailsService userDetailsService(UserRepository userRepository, ClientRepository clientRepository, TherapistRepository therapistRepository, ModelMapper modelMapper, PasswordEncoder passwordEncoder, TherapistService therapistService, ClientService clientService, JwtUtil jwtUtil) {
+        return new UserService(userRepository, clientRepository, therapistRepository, modelMapper, passwordEncoder, therapistService, clientService, jwtUtil);
     }
 
     @Bean
@@ -89,7 +93,17 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/client/**").hasAuthority("CLIENT")
                         .requestMatchers("/api/therapist/**").hasAuthority("THERAPIST")
+                        .requestMatchers("/api/therapists/**").permitAll()
+                        .requestMatchers("/api/appointments/**").permitAll()
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/appointments/*/cancel-request").hasAuthority("CLIENT")
+                        .requestMatchers(HttpMethod.PUT, "/api/appointments/*/reschedule").hasAuthority("CLIENT")
+                        .requestMatchers(HttpMethod.PUT, "/api/users/profile").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/appointments/*/status").hasAuthority("THERAPIST")
+                        .requestMatchers(HttpMethod.POST, "/api/feedbacks/appointments/*").hasRole("CLIENT")
+                        .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/appointments/{id}").hasAuthority("CLIENT")
+                        .requestMatchers(HttpMethod.POST, "/api/therapists/*/availabilities").hasAuthority("CLIENT")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

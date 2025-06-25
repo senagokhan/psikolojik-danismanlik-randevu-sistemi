@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.LocalDateTime;
 
 public interface AvailabilityRepository extends JpaRepository<Availability, Long> {
-    boolean existsByTherapistAndStartTime(Therapist therapist, LocalDateTime startTime);
     boolean existsByTherapistIdAndStartTime(Long therapistId, LocalDateTime startTime);
     Page<Availability> findByTherapistIdOrderByStartTimeAsc(Long therapistId, Pageable pageable);
+    boolean existsByTherapistAndStartTimeLessThanEqualAndEndTimeGreaterThanEqualAndBookedFalse(Therapist therapist, LocalDateTime startTime, LocalDateTime endTime);
 
 }

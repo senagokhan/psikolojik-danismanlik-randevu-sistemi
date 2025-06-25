@@ -7,6 +7,7 @@ import com.psikolojikdanismanlik.randevusistemi.entity.Client;
 import com.psikolojikdanismanlik.randevusistemi.entity.User;
 import com.psikolojikdanismanlik.randevusistemi.repository.ClientRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.UserRepository;
+import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.nio.file.AccessDeniedException;
@@ -18,11 +19,13 @@ public class ClientService {
     private final UserRepository userRepository;
     private final ClientRepository clientRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ModelMapper modelMapper;
 
-    public ClientService(UserRepository userRepository, ClientRepository clientRepository, PasswordEncoder passwordEncoder) {
+    public ClientService(UserRepository userRepository, ClientRepository clientRepository, PasswordEncoder passwordEncoder, ModelMapper modelMapper) {
         this.userRepository = userRepository;
         this.clientRepository = clientRepository;
         this.passwordEncoder = passwordEncoder;
+        this.modelMapper = modelMapper;
     }
 
     public ClientResponseDto createClient(ClientRequest request, String currentEmail) throws AccessDeniedException {
@@ -114,4 +117,16 @@ public class ClientService {
             throw new RuntimeException("Danışan güncellenirken hata oluştu: " + e.getMessage());
         }
     }
+
+    public ClientResponseDto getClientByUserId(Long userId) {
+        try {
+            Client client = clientRepository.findByUserId(userId)
+                    .orElseThrow(() -> new RuntimeException("Danışan bulunamadı."));
+            return modelMapper.map(client, ClientResponseDto.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Danışan bilgisi alınırken hata oluştu: " + e.getMessage());
+        }
+    }
+
+
 }

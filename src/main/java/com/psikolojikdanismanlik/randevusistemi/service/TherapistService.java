@@ -13,11 +13,13 @@ import com.psikolojikdanismanlik.randevusistemi.enums.Role;
 import com.psikolojikdanismanlik.randevusistemi.repository.AppointmentRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.TherapistRepository;
 import com.psikolojikdanismanlik.randevusistemi.repository.UserRepository;
+import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.nio.file.AccessDeniedException;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -31,13 +33,15 @@ public class TherapistService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AppointmentRepository appointmentRepository;
+    private final ModelMapper modelMapper;
 
 
-    public TherapistService(TherapistRepository therapistRepository, UserRepository userRepository, PasswordEncoder passwordEncoder, AppointmentRepository appointmentRepository) {
+    public TherapistService(TherapistRepository therapistRepository, UserRepository userRepository, PasswordEncoder passwordEncoder, AppointmentRepository appointmentRepository, ModelMapper modelMapper) {
         this.therapistRepository = therapistRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.appointmentRepository = appointmentRepository;
+        this.modelMapper = modelMapper;
     }
 
     public Therapist createTherapist(TherapistRequest request, String requesterEmail) {
@@ -150,8 +154,23 @@ public class TherapistService {
         dto.setStartTime(appointment.getStartTime());
         dto.setCreatedDate(appointment.getCreatedDate());
         dto.setStatus(appointment.getStatus().toString());
+
+        if (appointment.getClient() != null && appointment.getClient().getUser() != null) {
+            dto.setClientName(appointment.getClient().getUser().getFullName());
+        } else {
+            dto.setClientName("Bilinmiyor");
+        }
+
+        if (appointment.getStartTime() != null) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+            dto.setFormattedStartTime(appointment.getStartTime().format(formatter));
+        } else {
+            dto.setFormattedStartTime("Bilinmiyor");
+        }
+
         return dto;
     }
+
 
     public Page<TherapistResponseDto> getAllTherapists(Pageable pageable) {
         Page<Therapist> therapists = therapistRepository.findAll(pageable);
@@ -197,4 +216,32 @@ public class TherapistService {
             throw new RuntimeException("Danışan listesi getirilirken hata oluştu: " + e.getMessage());
         }
     }
+
+    public TherapistResponseDto getTherapistById(Long id) {
+        try {
+            Therapist therapist = therapistRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Terapist bulunamadı"));
+
+            TherapistResponseDto dto = modelMapper.map(therapist, TherapistResponseDto.class);
+            dto.setFullName(therapist.getUser().getFullName());
+
+            return dto;
+        } catch (Exception e) {
+            throw new RuntimeException("Terapist getirilirken bir hata oluştu: " + e.getMessage());
+        }
+    }
+
+    public TherapistResponseDto getTherapistByEmail(String email) {
+        try {
+            Therapist therapist = therapistRepository.findByUserEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Bu e-posta ile kayıtlı terapist bulunamadı: " + email));
+
+            return modelMapper.map(therapist, TherapistResponseDto.class);
+        } catch (Exception e) {
+            System.err.println("Terapist bilgisi alınamadı: " + e.getMessage());
+            throw new RuntimeException("Terapist bilgisi alınırken bir hata oluştu.");
+        }
+    }
+
+
 }

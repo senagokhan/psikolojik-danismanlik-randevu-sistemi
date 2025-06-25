@@ -10,6 +10,33 @@ public class AppointmentResponseDto {
     private LocalDateTime startTime;
     private LocalDate createdDate;
     private String status;
+    private String therapistName;
+    private String clientName;
+    private String formattedStartTime;
+
+    public String getClientName() {
+        return clientName;
+    }
+
+    public void setClientName(String clientName) {
+        this.clientName = clientName;
+    }
+
+    public String getFormattedStartTime() {
+        return formattedStartTime;
+    }
+
+    public void setFormattedStartTime(String formattedStartTime) {
+        this.formattedStartTime = formattedStartTime;
+    }
+
+    public String getTherapistName() {
+        return therapistName;
+    }
+
+    public void setTherapistName(String therapistName) {
+        this.therapistName = therapistName;
+    }
 
     public Long getId() {
         return id;

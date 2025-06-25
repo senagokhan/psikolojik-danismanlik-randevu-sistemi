@@ -30,7 +30,7 @@ public class Therapist {
     @Column(nullable = false)
     private String experience;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String about;
 
     @OneToMany(mappedBy = "therapist", cascade = CascadeType.ALL)

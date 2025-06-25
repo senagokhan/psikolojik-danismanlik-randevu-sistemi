@@ -11,9 +11,9 @@ import java.util.List;
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
     Page<Appointment> findByClientId(Long clientId, Pageable pageable);
     List<Appointment> findByTherapistId(Long therapistId);
-    boolean existsByClientIdAndStartTime(Long clientId, LocalDateTime startTime);
     void deleteAllByTherapistId(Long therapistId);
     Page<Appointment> findByTherapistId(Long therapistId, Pageable pageable);
-
+    List<Appointment> findByClientIdAndStartTimeAfterOrderByStartTimeAsc(Long clientId, LocalDateTime now);
+    List<Appointment> findByClientIdAndEndTimeBeforeOrderByStartTimeDesc(Long clientId, LocalDateTime now);
 
 }
