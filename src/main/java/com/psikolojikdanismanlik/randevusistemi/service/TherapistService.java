@@ -107,31 +107,6 @@ public class TherapistService {
                 .orElse(false);
     }
 
-    public void deleteTherapist(Long therapistId, String currentEmail) {
-        try {
-            Therapist therapist = therapistRepository.findById(therapistId)
-                    .orElseThrow(() -> new RuntimeException("Terapist bulunamadı"));
-
-            User user = therapist.getUser();
-
-            boolean isOwner = user.getEmail().equals(currentEmail);
-            boolean isAdmin = isAdmin(currentEmail);
-
-            if (!isOwner && !isAdmin) {
-                throw new AccessDeniedException("Bu işlemi yapmaya yetkiniz yok.");
-            }
-
-            appointmentRepository.deleteAllByTherapistId(therapistId);
-            therapistRepository.delete(therapist);
-            userRepository.delete(user);
-
-        } catch (AccessDeniedException e) {
-            throw new RuntimeException("Yetkisiz erişim: " + e.getMessage());
-        } catch (Exception e) {
-            throw new RuntimeException("Terapist silinirken bir hata oluştu: " + e.getMessage());
-        }
-    }
-
     public Page<AppointmentResponseDto> getAppointmentsByTherapistEmail(String email, Pageable pageable) {
         try {
             Therapist therapist = therapistRepository.findByUserEmail(email)
@@ -170,7 +145,6 @@ public class TherapistService {
 
         return dto;
     }
-
 
     public Page<TherapistResponseDto> getAllTherapists(Pageable pageable) {
         Page<Therapist> therapists = therapistRepository.findAll(pageable);

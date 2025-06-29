@@ -87,37 +87,6 @@ public class ClientService {
                 .orElse(false);
     }
 
-    public ClientResponseDto updateClient(Long clientId, ClientUpdateRequest request, String currentEmail) throws AccessDeniedException {
-        try {
-            Client client = clientRepository.findById(clientId).orElseThrow(() -> new RuntimeException("Client bulunamadı."));
-
-            User user = client.getUser();
-            boolean isOwner = user.getEmail().equals(currentEmail);
-            boolean isAdmin = isAdmin(currentEmail);
-
-            if (!isOwner && !isAdmin) {
-                throw new AccessDeniedException("Bu işlemi yapmaya yetkiniz yok.");
-            }
-            user.setFullName(request.getFullName());
-            user.setPhoneNumber(request.getPhoneNumber());
-            if (request.getPassword() != null && !request.getPassword().isBlank()) {
-                user.setPassword(passwordEncoder.encode(request.getPassword()));
-            }
-            userRepository.save(user);
-            ClientResponseDto dto = new ClientResponseDto();
-            dto.setId(client.getId());
-            dto.setFullName(user.getFullName());
-            dto.setEmail(user.getEmail());
-            dto.setPhoneNumber(user.getPhoneNumber());
-            return dto;
-
-        } catch (AccessDeniedException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Danışan güncellenirken hata oluştu: " + e.getMessage());
-        }
-    }
-
     public ClientResponseDto getClientByUserId(Long userId) {
         try {
             Client client = clientRepository.findByUserId(userId)

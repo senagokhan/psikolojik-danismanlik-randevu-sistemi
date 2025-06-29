@@ -2,7 +2,6 @@ package com.psikolojikdanismanlik.randevusistemi.controller;
 
 import com.psikolojikdanismanlik.randevusistemi.dto.request.UserProfileUpdateRequestDto;
 import com.psikolojikdanismanlik.randevusistemi.dto.request.UserRoleUpdateRequest;
-import com.psikolojikdanismanlik.randevusistemi.dto.request.UserUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.UserProfileResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.UserResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.enums.Role;
@@ -89,7 +88,8 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserProfileResponseDto> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<UserProfileResponseDto> getCurrentUser(
+            @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(userService.getCurrentUser(userDetails.getUsername()));
     }
 }

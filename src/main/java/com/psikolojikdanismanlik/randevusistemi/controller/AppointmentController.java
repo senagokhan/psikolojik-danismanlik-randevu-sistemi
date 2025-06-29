@@ -47,17 +47,6 @@ public class AppointmentController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/{id}/cancel-request")
-    public ResponseEntity<AppointmentResponseDto> requestCancelByClient(
-            @PathVariable Long id,
-            @RequestBody AppointmentStatusUpdateRequest request,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) throws AccessDeniedException {
-        String email = userDetails.getUsername();
-        AppointmentResponseDto response = appointmentService.requestCancelByClient(id, request.getStatus(), email);
-        return ResponseEntity.ok(response);
-    }
-
     @PutMapping("/{id}/reschedule")
     public ResponseEntity<AppointmentResponseDto> requestRescheduleByClient(
             @PathVariable Long id,
@@ -67,15 +56,6 @@ public class AppointmentController {
         String email = userDetails.getUsername();
         AppointmentResponseDto response = appointmentService.requestRescheduleByClient(id, request, email);
         return ResponseEntity.ok(response);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAppointment(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) throws AccessDeniedException {
-        appointmentService.deleteAppointment(id, userDetails.getUsername());
-        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}")

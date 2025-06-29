@@ -1,7 +1,6 @@
 package com.psikolojikdanismanlik.randevusistemi.controller;
 
 import com.psikolojikdanismanlik.randevusistemi.dto.request.ClientRequest;
-import com.psikolojikdanismanlik.randevusistemi.dto.request.ClientUpdateRequest;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.ClientResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.service.ClientService;
 import org.springframework.http.HttpStatus;
@@ -36,16 +35,6 @@ public class ClientController {
     ) throws AccessDeniedException {
         clientService.deleteClientById(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<ClientResponseDto> updateClient(
-            @PathVariable Long id,
-            @RequestBody ClientUpdateRequest request,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) throws AccessDeniedException {
-        ClientResponseDto updatedClient = clientService.updateClient(id, request, userDetails.getUsername());
-        return ResponseEntity.ok(updatedClient);
     }
 
     @GetMapping("/user/{userId}")

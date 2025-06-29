@@ -59,13 +59,6 @@ public class TherapistController {
         return ResponseEntity.ok(updated);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTherapist(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails
-    ) throws AccessDeniedException {
-        therapistService.deleteTherapist(id, userDetails.getUsername());
-        return ResponseEntity.noContent().build();
-    }
-
     @GetMapping
     public ResponseEntity<Page<TherapistResponseDto>> getAllTherapists(
             @RequestParam(defaultValue = "0") int page,

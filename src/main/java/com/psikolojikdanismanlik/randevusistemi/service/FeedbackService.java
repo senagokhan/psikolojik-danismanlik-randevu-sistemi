@@ -30,7 +30,9 @@ public class FeedbackService {
 
     public FeedbackResponseDto addFeedback(Long appointmentId, FeedbackRequestDto request, String clientEmail) throws AccessDeniedException {
         try {
-            Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new RuntimeException("Randevu bulunamadı."));
+            Appointment appointment = appointmentRepository.findById(appointmentId)
+                    .orElseThrow(() -> new RuntimeException("Randevu bulunamadı."));
+
             String appointmentClientEmail = appointment.getClient().getUser().getEmail();
             if (!appointmentClientEmail.equals(clientEmail)) {
                 throw new AccessDeniedException("Bu randevuya yorum yapmaya yetkiniz yok.");
@@ -155,6 +157,4 @@ public class FeedbackService {
             throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
         }
     }
-
-
 }

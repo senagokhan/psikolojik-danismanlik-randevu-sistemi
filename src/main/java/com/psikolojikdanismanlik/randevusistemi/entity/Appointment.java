@@ -28,9 +28,6 @@ public class Appointment {
     @JoinColumn(name = "client_id")
     private Client client;
 
-    @OneToOne(mappedBy = "appointment", cascade = CascadeType.ALL)
-    private Note note;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private Status status;

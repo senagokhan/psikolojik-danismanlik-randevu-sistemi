@@ -4,7 +4,6 @@ import com.psikolojikdanismanlik.randevusistemi.dto.request.*;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.LoginResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.UserProfileResponseDto;
 import com.psikolojikdanismanlik.randevusistemi.dto.response.UserResponseDto;
-import com.psikolojikdanismanlik.randevusistemi.entity.Client;
 import com.psikolojikdanismanlik.randevusistemi.entity.Therapist;
 import com.psikolojikdanismanlik.randevusistemi.entity.User;
 import com.psikolojikdanismanlik.randevusistemi.enums.Role;
@@ -21,7 +20,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,7 +52,6 @@ public class UserService implements UserDetailsService {
             if (userRepository.existsByEmail(request.getEmail())) {
                 throw new IllegalArgumentException("Bu e-posta adresi zaten kayıtlı.");
             }
-
             User user = modelMapper.map(request, User.class);
             user.setPassword(passwordEncoder.encode(request.getPassword()));
             userRepository.save(user);
@@ -65,16 +62,13 @@ public class UserService implements UserDetailsService {
                 therapistRequest.setSpecialization("Belirtilmedi");
                 therapistRequest.setExperience("Belirtilmedi");
                 therapistRequest.setAbout("Profil henüz oluşturulmadı.");
-
                 therapistService.createTherapist(therapistRequest, user.getEmail());
-
             } else if (user.getRole() == Role.CLIENT) {
                 ClientRequest clientRequest = new ClientRequest();
                 clientRequest.setUserId(user.getId());
 
                 clientService.createClient(clientRequest, user.getEmail());
             }
-
             return modelMapper.map(user, UserResponseDto.class);
 
         } catch (Exception e) {
@@ -91,9 +85,7 @@ public class UserService implements UserDetailsService {
             if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
                 throw new RuntimeException("E-posta veya şifre hatalı.");
             }
-
             String token = jwtUtil.generateToken(user);
-
             LoginResponseDto response = new LoginResponseDto();
             response.setToken(token);
             response.setUserId(user.getId());
@@ -114,27 +106,27 @@ public class UserService implements UserDetailsService {
         }
     }
 
-
-
-    @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + email));
-
-        return new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
-                user.getPassword(),
-                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
-        );
-    }
-
-    public UserResponseDto getUserById(Long id) {
+    public UserProfileResponseDto getCurrentUser(String email) {
         try {
-            User user = userRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
-            return modelMapper.map(user, UserResponseDto.class);
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+
+            UserProfileResponseDto dto = modelMapper.map(user, UserProfileResponseDto.class);
+            dto.setUserId(user.getId());
+            dto.setRole(user.getRole());
+
+            if (user.getRole() == Role.THERAPIST) {
+                Therapist therapist = therapistRepository.findByUser(user).orElse(null);
+                if (therapist != null) {
+                    dto.setTherapistId(therapist.getId());
+                    dto.setSpecialization(therapist.getSpecialization());
+                    dto.setExperience(therapist.getExperience());
+                    dto.setAbout(therapist.getAbout());
+                }
+            }
+            return dto;
         } catch (Exception e) {
-            throw new RuntimeException("Kullanıcı getirilirken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("Kullanıcı bilgileri alınırken bir hata oluştu: " + e.getMessage());
         }
     }
 
@@ -149,7 +141,6 @@ public class UserService implements UserDetailsService {
                 user.setPassword(passwordEncoder.encode(request.getPassword()));
             }
             userRepository.save(user);
-
             if (user.getRole() == Role.THERAPIST) {
                 Therapist therapist = therapistRepository.findByUser(user)
                         .orElseThrow(() -> new RuntimeException("Terapist bilgisi bulunamadı"));
@@ -168,7 +159,6 @@ public class UserService implements UserDetailsService {
             throw new RuntimeException("Profil güncellenirken hata oluştu: " + e.getMessage());
         }
     }
-
 
     public void deleteUser(Long userId, String currentEmail) {
         try {
@@ -196,6 +186,16 @@ public class UserService implements UserDetailsService {
             userRepository.deleteById(userId);
         } catch (Exception e) {
             throw new RuntimeException("Kullanıcı silinirken bir hata oluştu: " + e.getMessage());
+        }
+    }
+
+    public UserResponseDto getUserById(Long id) {
+        try {
+            User user = userRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
+            return modelMapper.map(user, UserResponseDto.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Kullanıcı getirilirken hata oluştu: " + e.getMessage());
         }
     }
 
@@ -253,29 +253,16 @@ public class UserService implements UserDetailsService {
         }
     }
 
-    public UserProfileResponseDto getCurrentUser(String email) {
-        try {
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + email));
 
-            UserProfileResponseDto dto = modelMapper.map(user, UserProfileResponseDto.class);
-            dto.setUserId(user.getId());
-            dto.setRole(user.getRole());
-
-            if (user.getRole() == Role.THERAPIST) {
-                Therapist therapist = therapistRepository.findByUser(user).orElse(null);
-                if (therapist != null) {
-                    dto.setTherapistId(therapist.getId());
-                    dto.setSpecialization(therapist.getSpecialization());
-                    dto.setExperience(therapist.getExperience());
-                    dto.setAbout(therapist.getAbout());
-                }
-            }
-            return dto;
-        } catch (Exception e) {
-            throw new RuntimeException("Kullanıcı bilgileri alınırken bir hata oluştu: " + e.getMessage());
-        }
+        return new org.springframework.security.core.userdetails.User(
+                user.getEmail(),
+                user.getPassword(),
+                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+        );
     }
-
 }
 

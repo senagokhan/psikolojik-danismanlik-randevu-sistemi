@@ -1,6 +1,5 @@
 package com.psikolojikdanismanlik.randevusistemi.repository;
 
-import com.psikolojikdanismanlik.randevusistemi.entity.Client;
 import com.psikolojikdanismanlik.randevusistemi.entity.Therapist;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

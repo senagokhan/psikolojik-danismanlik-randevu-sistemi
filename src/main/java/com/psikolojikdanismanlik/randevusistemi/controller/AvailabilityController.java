@@ -52,16 +52,6 @@ public class AvailabilityController {
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/{availabilityId}")
-    public ResponseEntity<AvailabilityResponseDto> updateAvailability(
-            @PathVariable Long therapistId,
-            @PathVariable Long availabilityId,
-            @RequestBody AvailabilityRequest request
-    ) throws AccessDeniedException {
-        AvailabilityResponseDto updated = availabilityService.updateAvailability(therapistId, availabilityId, request);
-        return ResponseEntity.ok(updated);
-    }
-
     @GetMapping("/available-at")
     public ResponseEntity<Boolean> isTherapistAvailable(
             @PathVariable Long therapistId,
