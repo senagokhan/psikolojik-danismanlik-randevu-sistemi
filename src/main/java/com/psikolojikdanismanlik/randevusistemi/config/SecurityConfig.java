@@ -94,7 +94,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/client/**").hasAuthority("CLIENT")
                         .requestMatchers("/api/therapist/**").hasAuthority("THERAPIST")
                         .requestMatchers("/api/therapists/**").permitAll()
-                        .requestMatchers("/api/appointments/**").permitAll()
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/appointments/*/cancel-request").hasAuthority("CLIENT")
                         .requestMatchers(HttpMethod.PUT, "/api/appointments/*/reschedule").hasAuthority("CLIENT")
@@ -104,6 +103,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/appointments/{id}").hasAuthority("CLIENT")
                         .requestMatchers(HttpMethod.POST, "/api/therapists/*/availabilities").hasAuthority("CLIENT")
+                        .requestMatchers("/api/appointments/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -112,7 +112,5 @@ public class SecurityConfig {
 
         return http.build();
     }
-
-
 }
 

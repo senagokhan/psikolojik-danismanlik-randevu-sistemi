@@ -217,5 +217,17 @@ public class TherapistService {
         }
     }
 
+    public List<TherapistResponseDto> searchTherapistsByName(String name) {
+        List<Therapist> therapists = therapistRepository.searchByFullName(name);
+
+        return therapists.stream().map(therapist -> {
+            TherapistResponseDto dto = new TherapistResponseDto();
+            dto.setId(therapist.getId());
+            dto.setFullName(therapist.getUser().getFullName());
+            dto.setSpecialization(therapist.getSpecialization());
+            dto.setExperience(therapist.getExperience());
+            return dto;
+        }).collect(Collectors.toList());
+    }
 
 }

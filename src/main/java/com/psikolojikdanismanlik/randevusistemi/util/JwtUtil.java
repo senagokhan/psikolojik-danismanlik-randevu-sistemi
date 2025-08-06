@@ -7,6 +7,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
 
 public class JwtUtil {
 
@@ -22,6 +23,7 @@ public class JwtUtil {
                 .setSubject(user.getEmail())
                 .claim("userId", user.getId())
                 .claim("userRole", user.getRole().name())
+                .claim("authorities", List.of(user.getRole().name()))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(getKey(), SignatureAlgorithm.HS256)

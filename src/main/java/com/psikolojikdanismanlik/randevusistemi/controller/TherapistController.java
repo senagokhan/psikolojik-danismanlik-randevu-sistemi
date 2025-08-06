@@ -23,11 +23,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/therapists")
-@RequiredArgsConstructor
 public class TherapistController {
 
     private final TherapistService therapistService;
-    private final AppointmentService appointmentService;
+
+    public TherapistController(TherapistService therapistService) {this.therapistService = therapistService;}
 
     @PostMapping
     public ResponseEntity<Therapist> createTherapist(
@@ -89,4 +89,9 @@ public class TherapistController {
         return ResponseEntity.ok(dto);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<TherapistResponseDto>> searchTherapists(@RequestParam("name") String name) {
+        List<TherapistResponseDto> results = therapistService.searchTherapistsByName(name);
+        return ResponseEntity.ok(results);
+    }
 }
