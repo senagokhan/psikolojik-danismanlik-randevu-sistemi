@@ -35,15 +35,15 @@ public class AppointmentService {
 
     public AppointmentResponseDto createAppointment(AppointmentRequest request, String clientEmail) {
         try {
-            User user = userRepository.findByEmail(clientEmail).orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
+            User user = userRepository.findByEmail(clientEmail).orElseThrow(() -> new RuntimeException("User not found."));
             if (user.getRole() != Role.CLIENT) {
-                throw new RuntimeException("Sadece danışanlar randevu oluşturabilir.");
+                throw new RuntimeException("Only clients can create an appointment\n.");
             }
-            Client client = clientRepository.findByUserId(user.getId()).orElseThrow(() -> new RuntimeException("Danışan bilgisi bulunamadı."));
+            Client client = clientRepository.findByUserId(user.getId()).orElseThrow(() -> new RuntimeException("Client information not found."));
             Availability availability = availabilityRepository.findById(request.getAvailabilityId())
-                    .orElseThrow(() -> new RuntimeException("Seçilen müsaitlik bilgisi bulunamadı."));
+                    .orElseThrow(() -> new RuntimeException("Selected availability information not found\n."));
             if (availability.isBooked()) {
-                throw new RuntimeException("Bu zaman dilimi zaten rezerve edilmiş.");
+                throw new RuntimeException("This time slot is already booked.");
             }
             Appointment appointment = new Appointment();
             appointment.setClient(client);
@@ -58,27 +58,27 @@ public class AppointmentService {
             appointmentRepository.save(appointment);
             return modelMapper.map(appointment, AppointmentResponseDto.class);
         } catch (RuntimeException e) {
-            throw new RuntimeException("Randevu oluşturulamadı: " + e.getMessage());
+            throw new RuntimeException("Could not create an appointment:\n " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Bilinmeyen bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("Error occured. " + e.getMessage());
         }
     }
 
     public AppointmentResponseDto updateStatus(Long id, Status status, String requesterEmail) throws AccessDeniedException {
         try {
             Appointment appointment = appointmentRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Randevu bulunamadı"));
+                    .orElseThrow(() -> new RuntimeException("Appointment not found."));
 
             String therapistEmailFromDb = appointment.getTherapist().getUser().getEmail();
 
             User requester = userRepository.findByEmail(requesterEmail)
-                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+                    .orElseThrow(() -> new RuntimeException("User not found."));
 
             boolean isTherapistOwner = therapistEmailFromDb.equals(requesterEmail);
             boolean isAdmin = requester.getRole() == Role.ADMIN;
 
             if (!isTherapistOwner && !isAdmin) {
-                throw new AccessDeniedException("Bu randevuyu güncellemeye yetkiniz yok.");
+                throw new AccessDeniedException("You do not have permission to update this appointment.\n");
             }
             appointment.setStatus(status);
             Appointment updated = appointmentRepository.save(appointment);
@@ -87,28 +87,28 @@ public class AppointmentService {
         } catch (AccessDeniedException e) {
             throw e;
         } catch (RuntimeException e) {
-            throw new RuntimeException("Randevu durumu güncellenirken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while updating the appointment status:\n " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("Error occured." + e.getMessage());
         }
     }
 
     public AppointmentResponseDto requestRescheduleByClient(Long appointmentId, RescheduleRequestDto request, String clientEmail) throws AccessDeniedException {
         try {
             Appointment appointment = appointmentRepository.findById(appointmentId)
-                    .orElseThrow(() -> new RuntimeException("Randevu bulunamadı"));
+                    .orElseThrow(() -> new RuntimeException("Appointment not found"));
             String emailFromDb = appointment.getClient().getUser().getEmail();
             if (!emailFromDb.equals(clientEmail)) {
-                throw new AccessDeniedException("Bu randevuyu yeniden planlama yetkiniz yok.");}
+                throw new AccessDeniedException("You are not authorized to reschedule this appointment.\n");}
             if (request.getNewTime() == null) {
-                throw new RuntimeException("Yeni istenilen zaman boş olamaz.");}
+                throw new RuntimeException("The new requested time cannot be empty.\n");}
             LocalDateTime endTime = request.getNewTime().plusHours(1);
             boolean isAvailable = availabilityRepository
                     .existsByTherapistAndStartTimeLessThanEqualAndEndTimeGreaterThanEqualAndBookedFalse(
                             appointment.getTherapist(), request.getNewTime(), endTime
                     );
             if (!isAvailable) {
-                throw new RuntimeException("Yeni istenilen saat terapist için uygun değil.");}
+                throw new RuntimeException("The new requested time is not suitable for the therapist.\n");}
             appointment.setStatus(Status.RESCHEDULE_REQUESTED_BY_CLIENT);
             appointment.setRequestedRescheduleTime(request.getNewTime());
             Appointment updated = appointmentRepository.save(appointment);
@@ -117,26 +117,26 @@ public class AppointmentService {
         } catch (AccessDeniedException e) {
             throw e;
         } catch (RuntimeException e) {
-            throw new RuntimeException("Randevu yeniden planlama isteği sırasında hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred during the appointment rescheduling request:\n " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("Error occurred: " + e.getMessage());
         }
     }
 
     public Page<AppointmentResponseDto> getAppointmentsByClientId(Long clientId, Pageable pageable, String clientEmail) {
         try {
             User user = userRepository.findByEmail(clientEmail)
-                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+                    .orElseThrow(() -> new RuntimeException("User not found."));
 
             if (!user.getRole().equals(Role.CLIENT)) {
-                throw new AccessDeniedException("Sadece danışanlar kendi randevularını görebilir.");
+                throw new AccessDeniedException("Only clients can view their own appointments.\n");
             }
 
             Client client = clientRepository.findById(clientId)
-                    .orElseThrow(() -> new RuntimeException("Danışan bulunamadı."));
+                    .orElseThrow(() -> new RuntimeException("Client not found."));
 
             if (!client.getUser().getEmail().equals(clientEmail)) {
-                throw new AccessDeniedException("Sadece kendi randevularınızı görüntüleyebilirsiniz.");
+                throw new AccessDeniedException("You can only view your own appointments.\n");
             }
 
             Page<Appointment> page = appointmentRepository.findByClientId(clientId, pageable);
@@ -144,9 +144,9 @@ public class AppointmentService {
             return page.map(this::mapToDto);
 
         } catch (AccessDeniedException e) {
-            throw new RuntimeException("Yetkisiz erişim: " + e.getMessage());
+            throw new RuntimeException("Unauthorized access:\n " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Randevular getirilirken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while fetching appointments:\n " + e.getMessage());
         }
     }
 
@@ -169,7 +169,7 @@ public class AppointmentService {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
             dto.setFormattedStartTime(appointment.getStartTime().format(formatter));
         } else {
-            dto.setFormattedStartTime("Bilinmiyor");
+            dto.setFormattedStartTime("Unknown");
         }
 
         return dto;
@@ -185,7 +185,7 @@ public class AppointmentService {
                     .map(this::mapToDto)
                     .toList();
         } catch (Exception e) {
-            throw new RuntimeException("Gelecek randevular getirilirken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while fetching upcoming appointments:\n " + e.getMessage());
         }
     }
 
@@ -200,10 +200,7 @@ public class AppointmentService {
                     .map(this::mapToDto)
                     .toList();
         } catch (Exception e) {
-            throw new RuntimeException("Geçmiş randevular getirilirken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while retrieving past appointments:\n " + e.getMessage());
         }
     }
-
-
-
 }

@@ -47,15 +47,15 @@ public class TherapistService {
     public Therapist createTherapist(TherapistRequest request, String requesterEmail) {
         try {
             User requester = userRepository.findByEmail(requesterEmail)
-                    .orElseThrow(() -> new RuntimeException("Giriş yapan kullanıcı bulunamadı"));
+                    .orElseThrow(() -> new RuntimeException("No logged in user found."));
 
             boolean isAdmin = requester.getRole() == Role.ADMIN;
 
             if (!isAdmin && !Objects.equals(request.getUserId(), requester.getId())) {
-                throw new AccessDeniedException("Bu işlemi yapmaya yetkiniz yok.");
+                throw new AccessDeniedException("You are not authorized to perform this operation.");
             }
             User user = userRepository.findById(request.getUserId())
-                    .orElseThrow(() -> new RuntimeException("İlgili kullanıcı bulunamadı"));
+                    .orElseThrow(() -> new RuntimeException("No relevant users found.\n"));
 
             Therapist therapist = new Therapist();
             therapist.setUser(user);
@@ -66,21 +66,21 @@ public class TherapistService {
             return therapistRepository.save(therapist);
 
         } catch (AccessDeniedException e) {
-            throw new RuntimeException("Yetkisiz işlem: " + e.getMessage());
+            throw new RuntimeException("Unauthorized access: " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Terapist oluşturulurken bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while creating a therapist: " + e.getMessage());
         }
     }
 
     public Therapist updateTherapist(Long therapistId, TherapistUpdateRequest request, String currentEmail) {
         try {
-            Therapist therapist = therapistRepository.findById(therapistId).orElseThrow(() -> new RuntimeException("Terapist bulunamadı"));
+            Therapist therapist = therapistRepository.findById(therapistId).orElseThrow(() -> new RuntimeException("Therapist not found."));
             User user = therapist.getUser();
             boolean isOwner = user.getEmail().equals(currentEmail);
             boolean isAdmin = isAdmin(currentEmail);
 
             if (!isOwner && !isAdmin) {
-                throw new AccessDeniedException("Bu işlemi yapmaya yetkiniz yok.");
+                throw new AccessDeniedException("You are not authorized to perform this operation.");
             }
             user.setFullName(request.getFullName());
             user.setPhoneNumber(request.getPhoneNumber());
@@ -95,9 +95,9 @@ public class TherapistService {
             return therapistRepository.save(therapist);
 
         } catch (AccessDeniedException e) {
-            throw new RuntimeException("Yetkisiz erişim: " + e.getMessage());
+            throw new RuntimeException("Unauthorized access: " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Terapist güncellenirken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while updating the therapist:" + e.getMessage());
         }
     }
 
@@ -110,14 +110,14 @@ public class TherapistService {
     public Page<AppointmentResponseDto> getAppointmentsByTherapistEmail(String email, Pageable pageable) {
         try {
             Therapist therapist = therapistRepository.findByUserEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Terapist bulunamadı"));
+                    .orElseThrow(() -> new RuntimeException("Therapist not found."));
 
             Page<Appointment> page = appointmentRepository.findByTherapistId(therapist.getId(), pageable);
 
             return page.map(this::mapToDto);
 
         } catch (Exception e) {
-            throw new RuntimeException("Terapistin randevuları getirilirken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while fetching therapist appointments: " + e.getMessage());
         }
     }
 
@@ -133,14 +133,14 @@ public class TherapistService {
         if (appointment.getClient() != null && appointment.getClient().getUser() != null) {
             dto.setClientName(appointment.getClient().getUser().getFullName());
         } else {
-            dto.setClientName("Bilinmiyor");
+            dto.setClientName("Unknown");
         }
 
         if (appointment.getStartTime() != null) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
             dto.setFormattedStartTime(appointment.getStartTime().format(formatter));
         } else {
-            dto.setFormattedStartTime("Bilinmiyor");
+            dto.setFormattedStartTime("Unknown");
         }
 
         return dto;
@@ -162,12 +162,12 @@ public class TherapistService {
     public List<ClientResponseDto> getClientsOfTherapist(String currentEmail) throws AccessDeniedException {
         try {
             Therapist therapist = therapistRepository.findByUserEmail(currentEmail)
-                    .orElseThrow(() -> new RuntimeException("Terapist bulunamadı."));
+                    .orElseThrow(() -> new RuntimeException("Therapist not found."));
 
             boolean isOwner = therapist.getUser().getEmail().equals(currentEmail);
             boolean isAdmin = isAdmin(currentEmail);
             if (!isOwner && !isAdmin) {
-                throw new AccessDeniedException("Bu işlemi yapmaya yetkiniz yok.");
+                throw new AccessDeniedException("You are not authorized to perform this operation.");
             }
             List<Appointment> appointments = appointmentRepository.findByTherapistId(therapist.getId());
             Set<Client> uniqueClients = appointments.stream().map(Appointment::getClient).collect(Collectors.toSet());
@@ -187,33 +187,33 @@ public class TherapistService {
         } catch (AccessDeniedException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Danışan listesi getirilirken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while fetching the client list: " + e.getMessage());
         }
     }
 
     public TherapistResponseDto getTherapistById(Long id) {
         try {
             Therapist therapist = therapistRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Terapist bulunamadı"));
+                    .orElseThrow(() -> new RuntimeException("Therapist not found."));
 
             TherapistResponseDto dto = modelMapper.map(therapist, TherapistResponseDto.class);
             dto.setFullName(therapist.getUser().getFullName());
 
             return dto;
         } catch (Exception e) {
-            throw new RuntimeException("Terapist getirilirken bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while fetching the therapist: " + e.getMessage());
         }
     }
 
     public TherapistResponseDto getTherapistByEmail(String email) {
         try {
             Therapist therapist = therapistRepository.findByUserEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Bu e-posta ile kayıtlı terapist bulunamadı: " + email));
+                    .orElseThrow(() -> new RuntimeException("No therapists were found registered with this email address: " + email));
 
             return modelMapper.map(therapist, TherapistResponseDto.class);
         } catch (Exception e) {
-            System.err.println("Terapist bilgisi alınamadı: " + e.getMessage());
-            throw new RuntimeException("Terapist bilgisi alınırken bir hata oluştu.");
+            System.err.println("Therapist information could not be obtained: " + e.getMessage());
+            throw new RuntimeException("An error occurred while retrieving therapist information.");
         }
     }
 

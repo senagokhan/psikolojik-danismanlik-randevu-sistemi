@@ -32,14 +32,14 @@ public class AvailabilityService {
     public Availability addAvailability(Long therapistId, AvailabilityRequest request, String requesterEmail) throws AccessDeniedException {
         try {
             User user = userRepository.findByEmail(requesterEmail)
-                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
+                    .orElseThrow(() -> new RuntimeException("User not found."));
 
             if (user.getRole() != Role.ADMIN && user.getRole() != Role.THERAPIST) {
-                throw new AccessDeniedException("Sadece terapist ya da admin müsaitlik ekleyebilir.");
+                throw new AccessDeniedException("Only the therapist or the admin can add availability.\n");
             }
 
             Therapist therapist = therapistRepository.findById(therapistId)
-                    .orElseThrow(() -> new RuntimeException("Terapist bulunamadı."));
+                    .orElseThrow(() -> new RuntimeException("Therapist not found."));
 
             Availability availability = new Availability();
             availability.setTherapist(therapist);
@@ -51,9 +51,9 @@ public class AvailabilityService {
         } catch (AccessDeniedException e) {
             throw e;
         } catch (RuntimeException e) {
-            throw new RuntimeException("Müsaitlik eklenirken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while adding availability:\n " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("Error occurred. " + e.getMessage());
         }
     }
 
@@ -61,19 +61,19 @@ public class AvailabilityService {
     public void deleteAvailability(Long therapistId, Long availabilityId, String therapistEmail) throws AccessDeniedException {
         try {
             Therapist therapist = therapistRepository.findById(therapistId)
-                    .orElseThrow(() -> new RuntimeException("Terapist bulunamadı"));
+                    .orElseThrow(() -> new RuntimeException("Therapist not found."));
 
             String emailFromDb = therapist.getUser().getEmail();
 
             if (!emailFromDb.equals(therapistEmail)) {
-                throw new AccessDeniedException("Bu müsaitliği silmeye yetkiniz yok.");
+                throw new AccessDeniedException("You do not have permission to delete this availability.\n");
             }
 
             Availability availability = availabilityRepository.findById(availabilityId)
-                    .orElseThrow(() -> new RuntimeException("Müsaitlik bulunamadı"));
+                    .orElseThrow(() -> new RuntimeException("Availability not found."));
 
             if (!availability.getTherapist().getId().equals(therapistId)) {
-                throw new AccessDeniedException("Bu müsaitliği silmeye yetkiniz yok.");
+                throw new AccessDeniedException("You do not have permission to delete this availability.\n");
             }
 
             availabilityRepository.delete(availability);
@@ -81,9 +81,9 @@ public class AvailabilityService {
         } catch (AccessDeniedException e) {
             throw e;
         } catch (RuntimeException e) {
-            throw new RuntimeException("Müsaitlik silinirken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while deleting availability: " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("Error occurred. " + e.getMessage());
         }
     }
 
@@ -91,7 +91,7 @@ public class AvailabilityService {
         try {
             return availabilityRepository.existsByTherapistIdAndStartTime(therapistId, desiredTime);
         } catch (Exception e) {
-            System.err.println("Terapist uygunluğu kontrol edilirken hata oluştu: " + e.getMessage());
+            System.err.println("An error occurred while checking therapist availability: " + e.getMessage());
             return false;
         }
     }
@@ -111,7 +111,7 @@ public class AvailabilityService {
                 return dto;
             });
         } catch (Exception e) {
-            throw new RuntimeException("Terapistin müsaitlikleri alınırken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while retrieving the therapist's availability: " + e.getMessage());
         }
     }
 }

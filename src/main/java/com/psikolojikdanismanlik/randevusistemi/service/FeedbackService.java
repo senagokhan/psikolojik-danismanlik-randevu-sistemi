@@ -31,17 +31,17 @@ public class FeedbackService {
     public FeedbackResponseDto addFeedback(Long appointmentId, FeedbackRequestDto request, String clientEmail) throws AccessDeniedException {
         try {
             Appointment appointment = appointmentRepository.findById(appointmentId)
-                    .orElseThrow(() -> new RuntimeException("Randevu bulunamadı."));
+                    .orElseThrow(() -> new RuntimeException("Appointment not found."));
 
             String appointmentClientEmail = appointment.getClient().getUser().getEmail();
             if (!appointmentClientEmail.equals(clientEmail)) {
-                throw new AccessDeniedException("Bu randevuya yorum yapmaya yetkiniz yok.");
+                throw new AccessDeniedException("You are not authorized to comment on this appointment.");
             }
             if (appointment.getStatus() != Status.COMPLETED) {
-                throw new RuntimeException("Yorum yapmak için randevunun tamamlanmış olması gerekir.");
+                throw new RuntimeException("To leave a comment, the appointment must be completed.");
             }
             if (appointment.getFeedback() != null) {
-                throw new RuntimeException("Bu randevu için zaten yorum yapılmış.");
+                throw new RuntimeException("There are already comments for this appointment.");
             }
             Feedback feedback = new Feedback();
             feedback.setComment(request.getComment());
@@ -55,27 +55,27 @@ public class FeedbackService {
         } catch (AccessDeniedException e) {
             throw e;
         } catch (RuntimeException e) {
-            throw new RuntimeException("Yorum eklenirken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("Error occurred while adding comment " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("Error occurred: " + e.getMessage());
         }
     }
 
     public void deleteFeedback(Long appointmentId, String requesterEmail) throws AccessDeniedException {
         try {
-            Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new RuntimeException("Randevu bulunamadı."));
+            Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new RuntimeException("Appointment not found."));
             Feedback feedback = appointment.getFeedback();
 
             if (feedback == null) {
-                throw new RuntimeException("Silinecek yorum bulunamadı.");
+                throw new RuntimeException("No comments found to delete.");
             }
 
             String feedbackOwnerEmail = feedback.getClient().getUser().getEmail();
-            User requester = userRepository.findByEmail(requesterEmail).orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
+            User requester = userRepository.findByEmail(requesterEmail).orElseThrow(() -> new RuntimeException("User not found."));
             boolean isFeedbackOwner = feedbackOwnerEmail.equals(requesterEmail);
             boolean isAdmin = requester.getRole() == Role.ADMIN;
             if (!isFeedbackOwner && !isAdmin) {
-                throw new AccessDeniedException("Bu yorumu silmeye yetkiniz yok.");
+                throw new AccessDeniedException("You do not have permission to delete this comment.");
             }
             appointment.setFeedback(null);
             appointmentRepository.save(appointment);
@@ -83,9 +83,9 @@ public class FeedbackService {
         } catch (AccessDeniedException e) {
             throw e;
         } catch (RuntimeException e) {
-            throw new RuntimeException("Yorum silinirken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while deleting the comment: " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("Error occurred: " + e.getMessage());
         }
     }
 
@@ -95,7 +95,7 @@ public class FeedbackService {
 
             Feedback feedback = appointment.getFeedback();
             if (feedback == null) {
-                throw new RuntimeException("Bu randevuda henüz yorum yok, önce oluşturmalısınız.");
+                throw new RuntimeException("There is no comment yet on this appointment, you must create one first.");
             }
 
             feedback.setComment(request.getComment());
@@ -108,33 +108,33 @@ public class FeedbackService {
         } catch (AccessDeniedException e) {
             throw e;
         } catch (RuntimeException e) {
-            throw new RuntimeException("Yorum güncellenirken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while updating the comment: " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("Error occurred: " + e.getMessage());
         }
     }
 
     private Appointment getAuthorizedCompletedAppointment(Long appointmentId, String clientEmail) throws AccessDeniedException {
         try {
             Appointment appointment = appointmentRepository.findById(appointmentId)
-                    .orElseThrow(() -> new RuntimeException("Randevu bulunamadı"));
+                    .orElseThrow(() -> new RuntimeException("Appointment not found."));
 
             String email = appointment.getClient().getUser().getEmail();
             if (!email.equals(clientEmail)) {
-                throw new AccessDeniedException("Bu randevuya erişim yetkiniz yok.");
+                throw new AccessDeniedException("You do not have access to this appointment.");
             }
 
             if (appointment.getStatus() != Status.COMPLETED) {
-                throw new RuntimeException("Yalnızca tamamlanmış randevulara yorum yapılabilir.");
+                throw new RuntimeException("Only completed appointments can be commented on.");
             }
             return appointment;
 
         } catch (AccessDeniedException e) {
             throw e;
         } catch (RuntimeException e) {
-            throw new RuntimeException("Randevu kontrolü sırasında hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred during appointment check: " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("Error occurred: " + e.getMessage());
         }
     }
 
@@ -152,9 +152,9 @@ public class FeedbackService {
             Double avg = feedbackRepository.findAverageRatingByTherapistId(therapistId);
             return avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0;
         } catch (RuntimeException e) {
-            throw new RuntimeException("Ortalama puan hesaplanırken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while calculating the average score: " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Beklenmeyen bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("Error occurred. " + e.getMessage());
         }
     }
 }

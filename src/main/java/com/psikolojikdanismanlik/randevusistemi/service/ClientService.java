@@ -18,25 +18,23 @@ public class ClientService {
 
     private final UserRepository userRepository;
     private final ClientRepository clientRepository;
-    private final PasswordEncoder passwordEncoder;
     private final ModelMapper modelMapper;
 
-    public ClientService(UserRepository userRepository, ClientRepository clientRepository, PasswordEncoder passwordEncoder, ModelMapper modelMapper) {
+    public ClientService(UserRepository userRepository, ClientRepository clientRepository, ModelMapper modelMapper) {
         this.userRepository = userRepository;
         this.clientRepository = clientRepository;
-        this.passwordEncoder = passwordEncoder;
         this.modelMapper = modelMapper;
     }
 
     public ClientResponseDto createClient(ClientRequest request, String currentEmail) throws AccessDeniedException {
         try {
-            User user = userRepository.findById(request.getUserId()).orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+            User user = userRepository.findById(request.getUserId()).orElseThrow(() -> new RuntimeException("User not found."));
 
             boolean isOwner = user.getEmail().equals(currentEmail);
             boolean isAdmin = isAdmin(currentEmail);
 
             if (!isOwner && !isAdmin) {
-                throw new AccessDeniedException("Bu işlemi yapmaya yetkiniz yok.");
+                throw new AccessDeniedException("You are not authorized to perform this operation.");
             }
 
             Client client = new Client();
@@ -53,14 +51,14 @@ public class ClientService {
         } catch (AccessDeniedException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Danışan oluşturulurken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while creating the client:" + e.getMessage());
         }
     }
 
     public void deleteClientById(Long clientId, String currentEmail) throws AccessDeniedException {
         try {
             Client client = clientRepository.findById(clientId)
-                    .orElseThrow(() -> new RuntimeException("Client bulunamadı"));
+                    .orElseThrow(() -> new RuntimeException("Client not found."));
 
             User clientUser = client.getUser();
 
@@ -68,7 +66,7 @@ public class ClientService {
             boolean isAdmin = isAdmin(currentEmail);
 
             if (!isOwner && !isAdmin) {
-                throw new AccessDeniedException("Bu işlemi yapmaya yetkiniz yok.");
+                throw new AccessDeniedException("You are not authorized to perform this operation.");
             }
 
             userRepository.delete(clientUser);
@@ -77,7 +75,7 @@ public class ClientService {
         } catch (AccessDeniedException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Danışan silinirken bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while deleting the client: " + e.getMessage());
         }
     }
 
@@ -90,12 +88,10 @@ public class ClientService {
     public ClientResponseDto getClientByUserId(Long userId) {
         try {
             Client client = clientRepository.findByUserId(userId)
-                    .orElseThrow(() -> new RuntimeException("Danışan bulunamadı."));
+                    .orElseThrow(() -> new RuntimeException("Client not found."));
             return modelMapper.map(client, ClientResponseDto.class);
         } catch (Exception e) {
-            throw new RuntimeException("Danışan bilgisi alınırken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while retrieving client information: " + e.getMessage());
         }
     }
-
-
 }

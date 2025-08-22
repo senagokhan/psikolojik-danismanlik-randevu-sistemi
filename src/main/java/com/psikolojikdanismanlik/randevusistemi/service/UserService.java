@@ -50,7 +50,7 @@ public class UserService implements UserDetailsService {
     public UserResponseDto register(UserRegisterRequest request) {
         try {
             if (userRepository.existsByEmail(request.getEmail())) {
-                throw new IllegalArgumentException("Bu e-posta adresi zaten kayıtlı.");
+                throw new IllegalArgumentException("This email address is already registered.");
             }
             User user = modelMapper.map(request, User.class);
             user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -59,9 +59,9 @@ public class UserService implements UserDetailsService {
             if (user.getRole() == Role.THERAPIST) {
                 TherapistRequest therapistRequest = new TherapistRequest();
                 therapistRequest.setUserId(user.getId());
-                therapistRequest.setSpecialization("Belirtilmedi");
-                therapistRequest.setExperience("Belirtilmedi");
-                therapistRequest.setAbout("Profil henüz oluşturulmadı.");
+                therapistRequest.setSpecialization("Not specified");
+                therapistRequest.setExperience("Not specified");
+                therapistRequest.setAbout("The profile has not been created yet.");
                 therapistService.createTherapist(therapistRequest, user.getEmail());
             } else if (user.getRole() == Role.CLIENT) {
                 ClientRequest clientRequest = new ClientRequest();
@@ -72,7 +72,7 @@ public class UserService implements UserDetailsService {
             return modelMapper.map(user, UserResponseDto.class);
 
         } catch (Exception e) {
-            throw new RuntimeException("Kayıt işlemi sırasında bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred during registration: " + e.getMessage());
         }
     }
 
@@ -80,10 +80,10 @@ public class UserService implements UserDetailsService {
     public LoginResponseDto login(UserLoginRequest request) {
         try {
             User user = userRepository.findByEmail(request.getEmail())
-                    .orElseThrow(() -> new RuntimeException("E-posta veya şifre hatalı."));
+                    .orElseThrow(() -> new RuntimeException("Email or password is incorrect."));
 
             if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-                throw new RuntimeException("E-posta veya şifre hatalı.");
+                throw new RuntimeException("Email or password is incorrect.");
             }
             String token = jwtUtil.generateToken(user);
             LoginResponseDto response = new LoginResponseDto();
@@ -102,14 +102,14 @@ public class UserService implements UserDetailsService {
             return response;
 
         } catch (Exception e) {
-            throw new RuntimeException("Giriş işlemi sırasında bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred during the login process: " + e.getMessage());
         }
     }
 
     public UserProfileResponseDto getCurrentUser(String email) {
         try {
             User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+                    .orElseThrow(() -> new RuntimeException("User not found."));
 
             UserProfileResponseDto dto = modelMapper.map(user, UserProfileResponseDto.class);
             dto.setUserId(user.getId());
@@ -126,14 +126,14 @@ public class UserService implements UserDetailsService {
             }
             return dto;
         } catch (Exception e) {
-            throw new RuntimeException("Kullanıcı bilgileri alınırken bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while retrieving user information: " + e.getMessage());
         }
     }
 
     public UserProfileResponseDto updateCurrentUser(UserProfileUpdateRequestDto request, String email) {
         try {
             User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
+                    .orElseThrow(() -> new RuntimeException("User not found."));
 
             if (request.getFullName() != null) user.setFullName(request.getFullName());
             if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
@@ -143,7 +143,7 @@ public class UserService implements UserDetailsService {
             userRepository.save(user);
             if (user.getRole() == Role.THERAPIST) {
                 Therapist therapist = therapistRepository.findByUser(user)
-                        .orElseThrow(() -> new RuntimeException("Terapist bilgisi bulunamadı"));
+                        .orElseThrow(() -> new RuntimeException("Therapist not found."));
 
                 if (request.getSpecialization() != null)
                     therapist.setSpecialization(request.getSpecialization());
@@ -156,23 +156,23 @@ public class UserService implements UserDetailsService {
             }
             return getCurrentUser(email);
         } catch (Exception e) {
-            throw new RuntimeException("Profil güncellenirken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while updating the profile: " + e.getMessage());
         }
     }
 
     public void deleteUser(Long userId, String currentEmail) {
         try {
             User userToDelete = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
+                    .orElseThrow(() -> new RuntimeException("User not found."));
 
             User currentUser = userRepository.findByEmail(currentEmail)
-                    .orElseThrow(() -> new RuntimeException("Geçerli kullanıcı bulunamadı."));
+                    .orElseThrow(() -> new RuntimeException("Valid user not found."));
 
             boolean isOwner = userToDelete.getEmail().equals(currentEmail);
             boolean isAdmin = currentUser.getRole().name().equals("ADMIN");
 
             if (!isOwner && !isAdmin) {
-                throw new AccessDeniedException("Bu işlemi yapmaya yetkiniz yok.");
+                throw new AccessDeniedException("You are not authorized to perform this operation.");
             }
 
             if (userToDelete.getClient() != null) {
@@ -185,17 +185,17 @@ public class UserService implements UserDetailsService {
 
             userRepository.deleteById(userId);
         } catch (Exception e) {
-            throw new RuntimeException("Kullanıcı silinirken bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while deleting the user: " + e.getMessage());
         }
     }
 
     public UserResponseDto getUserById(Long id) {
         try {
             User user = userRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı."));
+                    .orElseThrow(() -> new RuntimeException("User not found."));
             return modelMapper.map(user, UserResponseDto.class);
         } catch (Exception e) {
-            throw new RuntimeException("Kullanıcı getirilirken hata oluştu: " + e.getMessage());
+            throw new RuntimeException("Error while fetching user: " + e.getMessage());
         }
     }
 
@@ -204,23 +204,23 @@ public class UserService implements UserDetailsService {
             return userRepository.findAll(pageable)
                     .map(user -> modelMapper.map(user, UserResponseDto.class));
         } catch (Exception e) {
-            throw new RuntimeException("Kullanıcılar getirilirken bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("Error while fetching users: " + e.getMessage());
         }
     }
 
     public boolean isAdmin(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+                .orElseThrow(() -> new RuntimeException("User not found."));
         return user.getRole() == Role.ADMIN;
     }
 
     public List<UserResponseDto> getUsersByRole(Role role, String requesterEmail) throws AccessDeniedException {
         try {
             User requester = userRepository.findByEmail(requesterEmail)
-                    .orElseThrow(() -> new RuntimeException("İstek yapan kullanıcı bulunamadı."));
+                    .orElseThrow(() -> new RuntimeException("The user who made the request could not be found."));
 
             if (requester.getRole() != Role.ADMIN) {
-                throw new AccessDeniedException("Sadece admin kullanıcılar bu işlemi yapabilir.");
+                throw new AccessDeniedException("Unauthorized access.");
             }
 
             List<User> users = userRepository.findByRole(role);
@@ -230,33 +230,33 @@ public class UserService implements UserDetailsService {
         } catch (AccessDeniedException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Kullanıcılar role göre getirilirken bir hata oluştu: " + e.getMessage());
+            throw new RuntimeException("An error occurred while fetching users by role: " + e.getMessage());
         }
     }
 
     public UserResponseDto updateUserRole(Long userId, UserRoleUpdateRequest request, String requesterEmail) {
         try {
             if (!isAdmin(requesterEmail)) {
-                throw new AccessDeniedException("Sadece admin rol güncellemesi yapabilir.");
+                throw new AccessDeniedException("Unauthorized access.");
             }
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+                    .orElseThrow(() -> new RuntimeException("User not found."));
 
             user.setRole(request.getNewRole());
             userRepository.save(user);
             return modelMapper.map(user, UserResponseDto.class);
 
         } catch (AccessDeniedException e) {
-            throw new RuntimeException("Yetkisiz erişim: " + e.getMessage());
+            throw new RuntimeException("Unauthorized access: " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Rol güncellenemedi: " + e.getMessage());
+            throw new RuntimeException("Failed to update role: " + e.getMessage());
         }
     }
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + email));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
